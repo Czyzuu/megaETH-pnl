@@ -1,0 +1,2438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MegaETH Terminal · PnL Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #19191A;
+  --surface: #1E1E20;
+  --text: #ECE8E8;
+  --muted: #DFD9D9;
+  --green: #90D79F;
+  --green-2: #6DD0A9;
+  --pink: #FF8AA8;
+  --pink-2: #F786C6;
+  --blue: #7EAAD4;
+  --blue-2: #70BAD2;
+  --peach: #F5AF94;
+  --border: rgba(144, 215, 159, 0.15);
+  --border-strong: rgba(144, 215, 159, 0.30);
+  --mono: 'Share Tech Mono', 'Courier New', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+@keyframes hueShift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.55; transform: scale(0.85); }
+}
+
+/* ── HEADER ──────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+  background: var(--bg);
+  z-index: 20;
+  gap: 16px;
+}
+
+.brand { display: flex; align-items: center; gap: 0; }
+
+.mf-mark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--mono);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-size: clamp(18px, 2vw, 26px);
+}
+.mf-bracket {
+  color: var(--green-2);
+  font-weight: 700;
+  font-size: 0.55em;
+  letter-spacing: 0.18em;
+  transform: translateY(-0.15em);
+  text-shadow: 0 0 14px rgba(109,208,169,0.55);
+}
+.mf-mega { color: var(--text); }
+.mf-pnl {
+  background: linear-gradient(90deg, var(--green) 0%, var(--green-2) 35%, var(--peach) 70%, var(--pink) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  animation: hueShift 6s ease-in-out infinite;
+}
+.mf-cursor {
+  display: inline-block;
+  width: 0.45ch;
+  color: var(--green-2);
+  -webkit-text-fill-color: var(--green-2);
+  animation: blink 1s steps(2, end) infinite;
+  text-shadow: 0 0 10px rgba(109,208,169,0.7);
+}
+
+.brand-sub {
+  margin-left: 20px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  opacity: 0.35;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  align-self: center;
+}
+
+.header-right { display: flex; align-items: center; gap: 14px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(144, 215, 159, 0.08);
+  border: 1px solid rgba(144, 215, 159, 0.4);
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  box-shadow: 0 0 18px rgba(144, 215, 159, 0.22);
+}
+.badge .dot {
+  width: 7px; height: 7px;
+  background: var(--green-2);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--green-2);
+  animation: pulse 1.8s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.ts {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  opacity: 0.3;
+}
+
+/* ── HERO ────────────────────────────────────────────── */
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 28px 28px 36px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-top: -1px;
+}
+.hero-left { flex: 1; min-width: 0; }
+.hero-title {
+  margin: 0 0 14px;
+  font-family: 'Oxanium', 'Helvetica Neue', system-ui, sans-serif;
+  font-size: clamp(28px, 5vw, 56px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.hero-title .accent {
+  background: linear-gradient(90deg, var(--green) 0%, var(--green-2) 35%, var(--peach) 70%, var(--pink) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  animation: hueShift 6s ease-in-out infinite;
+}
+.hero-sub {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.7;
+  margin: 0;
+}
+
+/* ── WALLET INPUT ────────────────────────────────────── */
+.wallet-wrap {
+  flex-shrink: 0;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wallet-lbl {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.45;
+}
+.wallet-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.35);
+  transition: border-color 0.15s;
+}
+.wallet-row:focus-within { border-color: var(--border-strong); }
+.wallet-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 9px 12px;
+  outline: none;
+  letter-spacing: 0.04em;
+  min-width: 0;
+}
+.wallet-input::placeholder { color: rgba(223,217,217,0.2); }
+.wallet-status {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.wallet-status[data-state="loading"] { color: var(--muted); opacity: 0.5; }
+.wallet-status[data-state="ok"]      { color: var(--green); }
+.wallet-status[data-state="err"]     { color: var(--pink); }
+.wallet-hint {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 900px) {
+  .hero { flex-direction: column; align-items: flex-start; gap: 24px; }
+  .wallet-wrap { width: 100%; }
+}
+
+/* ── STATS BAR ───────────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.stat {
+  padding: 16px 22px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 5px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  transition: border-color 0.15s;
+}
+.stat:last-child { border-right: none; }
+.stat:hover { border-color: var(--border-strong); }
+
+.stat-lbl {
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  opacity: 0.4;
+}
+.stat-val {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s;
+}
+.stat-sub {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  opacity: 0.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── TOOLBAR ─────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 28px;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.filters { display: flex; gap: 4px; }
+.f-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  transition: all 0.12s;
+  opacity: 0.55;
+}
+.f-btn:hover { opacity: 1; border-color: var(--border-strong); color: var(--text); }
+.f-btn.on {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(144,215,159,0.07);
+  opacity: 1;
+}
+.sort-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  opacity: 0.4;
+}
+.s-opt { cursor: pointer; padding: 2px 5px; transition: all 0.12s; opacity: 0.7; }
+.s-opt:hover { opacity: 1; color: var(--text); }
+.s-opt.on { color: var(--green-2); opacity: 1; }
+
+/* ── GRID ────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 20px 28px;
+  gap: 10px;
+}
+
+/* ── CARD ────────────────────────────────────────────── */
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  border: 1px solid var(--border);
+  border-radius: 0;
+  padding: 14px 14px 18px;
+  display: flex; flex-direction: column; gap: 11px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+.card:hover { border-color: var(--border-strong); }
+.card-inactive { opacity: 0.35; pointer-events: none; flex: 1; min-width: 0; padding: 8px 6px; gap: 4px; }
+.card-inactive .accent-bar { opacity: 0.3; height: 2px; }
+.card-inactive .fields, .card-inactive .card-pnl, .card-inactive .card-bar { display: none; }
+.card-inactive .card-name { font-size: 8px; }
+.card-inactive .card-top { gap: 3px; }
+.card-inactive .tag { font-size: 6px; padding: 1px 4px; }
+.tba-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 0 28px 20px;
+}
+
+/* radial card glow */
+.card::after {
+  content: '';
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at 100% 0%, var(--card-glow, rgba(144,215,159,0.10)) 0%, transparent 55%);
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+.card:hover::after { opacity: 1; }
+
+/* per-tag glows */
+.card[data-tag="trade"] { --card-glow: rgba(126,170,212,0.16); }
+.card[data-tag="yield"] { --card-glow: rgba(144,215,159,0.16); }
+.card[data-tag="nft"]   { --card-glow: rgba(247,134,198,0.18); }
+.card[data-tag="defi"]  { --card-glow: rgba(109,208,169,0.16); }
+.card[data-tag="farm"]  { --card-glow: rgba(245,175,148,0.18); }
+
+/* accent bar (top) */
+.accent-bar {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 3px;
+  opacity: 0.85; z-index: 2;
+}
+.card[data-tag="trade"] .accent-bar { background: linear-gradient(90deg, var(--blue) 0%, var(--green-2) 100%); box-shadow: 0 0 18px rgba(126,170,212,0.55); }
+.card[data-tag="yield"] .accent-bar { background: linear-gradient(90deg, var(--green) 0%, var(--green-2) 100%); box-shadow: 0 0 18px rgba(144,215,159,0.55); }
+.card[data-tag="nft"]   .accent-bar { background: linear-gradient(90deg, var(--pink-2) 0%, var(--pink) 100%); box-shadow: 0 0 18px rgba(247,134,198,0.55); }
+.card[data-tag="defi"]  .accent-bar { background: linear-gradient(90deg, var(--green-2) 0%, var(--blue-2) 100%); box-shadow: 0 0 18px rgba(109,208,169,0.55); }
+.card[data-tag="farm"]  .accent-bar { background: linear-gradient(90deg, var(--peach) 0%, var(--pink) 100%); box-shadow: 0 0 18px rgba(245,175,148,0.55); }
+.card[data-tag="rwa"]     .accent-bar { background: linear-gradient(90deg, #c8aaff 0%, #a78bfa 100%); box-shadow: 0 0 18px rgba(200,170,255,0.55); }
+.card[data-tag="staking"] .accent-bar { background: linear-gradient(90deg, var(--green) 0%, var(--green-2) 100%); box-shadow: 0 0 18px rgba(144,215,159,0.55); }
+
+
+.card > * { position: relative; z-index: 1; }
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-num {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+  opacity: 0.3;
+}
+.tag {
+  font-family: var(--mono);
+  font-size: 8px;
+  padding: 2px 6px;
+  border: 1px solid;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.tag-trade { border-color: rgba(126,170,212,0.35); color: var(--blue);    }
+.tag-yield { border-color: rgba(144,215,159,0.35); color: var(--green);   }
+.tag-nft   { border-color: rgba(247,134,198,0.35); color: var(--pink-2);  }
+.tag-defi  { border-color: rgba(109,208,169,0.35); color: var(--green-2); }
+.tag-farm  { border-color: rgba(245,175,148,0.35); color: var(--peach);   }
+.tag-rwa     { border-color: rgba(200,170,255,0.35); color: #c8aaff;        }
+.tag-staking { border-color: rgba(144,215,159,0.35); color: var(--green);   }
+.tag-tba     { border-color: rgba(223,217,217,0.12); color: rgba(223,217,217,0.3); }
+
+.card-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.25;
+  cursor: default;
+  outline: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.12s, color 0.12s;
+}
+.card-name[contenteditable="true"] {
+  cursor: text;
+  border-bottom-color: var(--border-strong);
+  color: var(--green);
+}
+.card-name:hover:not([contenteditable="true"]) { opacity: 0.85; }
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.field-lbl {
+  font-family: var(--mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  opacity: 0.4;
+  margin-bottom: 4px;
+}
+input[type=number] {
+  width: 100%;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(144,215,159,0.1);
+  border-radius: 0;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 8px;
+  outline: none;
+  transition: border-color 0.12s;
+  -moz-appearance: textfield;
+}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type=number]:focus { border-color: rgba(144,215,159,0.35); }
+input[type=number]::placeholder { color: rgba(223,217,217,0.18); }
+
+/* ── CARD WALLET INPUT ───────────────────────────────── */
+.card-wallet {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.35);
+  transition: border-color 0.15s;
+}
+.card-wallet:focus-within { border-color: var(--border-strong); }
+.card-wallet-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 7px 8px;
+  outline: none;
+  letter-spacing: 0.04em;
+  min-width: 0;
+}
+.card-wallet-input::placeholder { color: rgba(223,217,217,0.15); }
+.card-wallet-lbl {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 7px 8px;
+  color: rgba(223,217,217,0.3);
+  letter-spacing: 0.04em;
+}
+.card-wallet-status {
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.card-wallet-status[data-state="loading"] { color: var(--muted); opacity: 0.5; }
+.card-wallet-status[data-state="ok"]      { color: var(--green); }
+.card-wallet-status[data-state="err"]     { color: var(--pink); }
+
+.card-pnl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+}
+.pnl-num {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(223,217,217,0.25);
+  transition: color 0.2s;
+}
+.pnl-num.pos { color: var(--green); text-shadow: 0 0 14px rgba(144,215,159,0.3); }
+.pnl-num.neg { color: var(--pink);  text-shadow: 0 0 14px rgba(255,138,168,0.3); }
+.pnl-pct {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: rgba(223,217,217,0.22);
+  transition: color 0.2s;
+}
+.pnl-pct.pos { color: var(--green-2); }
+.pnl-pct.neg { color: var(--pink-2); }
+
+.card-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px; overflow: hidden;
+}
+.card-bar-fill {
+  height: 100%; width: 0;
+  transition: width 0.4s ease, background-color 0.4s;
+}
+
+/* ── HELPERS ─────────────────────────────────────────── */
+.c-green { color: var(--green) !important; }
+.c-pink  { color: var(--pink)  !important; }
+.c-blue  { color: var(--blue)  !important; }
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+@media (max-width: 1280px) {
+  .grid  { grid-template-columns: repeat(3, 1fr); }
+  .stats { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 900px) {
+  .grid  { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .grid  { grid-template-columns: 1fr; }
+  .header, .toolbar, .grid { padding-left: 16px; padding-right: 16px; }
+  .stat  { padding: 12px 16px; }
+}
+
+/* ── NFT FLOORS ──────────────────────────────────────── */
+.nft-section {
+  padding: 20px 28px 32px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+.nft-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.nft-apikey-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.nft-apikey-lbl {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  opacity: 0.4;
+  white-space: nowrap;
+}
+.nft-apikey-input {
+  font-family: var(--mono);
+  font-size: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 3px 8px;
+  width: 220px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.nft-apikey-input:focus { border-color: var(--border-strong); }
+.nft-apikey-input::placeholder { color: rgba(223,217,217,0.18); }
+.nft-section-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pink);
+}
+.nft-section-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  opacity: 0.45;
+}
+.nft-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+.nft-stats {
+  display: flex;
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+.nft-stat {
+  flex: 1;
+  padding: 12px 18px;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 4px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+}
+.nft-stat:last-child { border-right: none; }
+.nft-card { flex: 1; min-width: 0; }
+.nft-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  border: 1px solid var(--border);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.nft-card:hover { border-color: var(--border-strong); }
+.nft-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 2px;
+  background: linear-gradient(90deg, var(--pink-2) 0%, var(--pink) 100%);
+  box-shadow: 0 0 14px rgba(247,134,198,0.55);
+}
+.nft-card-name {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  opacity: 0.65;
+  text-transform: uppercase;
+}
+.nft-sync-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--green);
+  padding: 3px 12px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: border-color 0.2s;
+}
+.nft-sync-btn:hover { border-color: var(--border-strong); }
+.nft-sync-btn:disabled { opacity: 0.4; cursor: default; }
+.nft-floor-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.nft-price {
+  font-family: var(--mono);
+  font-size: 19px;
+  color: var(--text);
+  line-height: 1;
+}
+.nft-unit {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  opacity: 0.5;
+}
+.nft-usd {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.55;
+}
+.nft-change {
+  font-family: var(--mono);
+  font-size: 10px;
+  margin-left: auto;
+}
+.nft-change.pos { color: var(--green); }
+.nft-change.neg { color: var(--pink); }
+.nft-pnl {
+  font-family: var(--mono);
+  font-size: 11px;
+  min-height: 14px;
+}
+.nft-pnl.pos { color: var(--green); }
+.nft-pnl.neg { color: var(--pink); }
+.nft-img-hero {
+  margin: -14px -14px 0;
+  position: relative;
+  height: 155px;
+  overflow: hidden;
+  background: #0e0e10;
+  flex-shrink: 0;
+}
+.nft-carousel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+.nft-carousel::-webkit-scrollbar { display: none; }
+.nft-slide {
+  min-width: 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nft-slide img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.nft-img-hero::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 16px;
+  background: linear-gradient(to top, #19191A, transparent);
+  z-index: 3;
+  pointer-events: none;
+}
+.nft-img-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px, transparent 3px,
+    rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+.nft-img-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 56px;
+  letter-spacing: 0.12em;
+  color: rgba(223,217,217,0.05);
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px,
+    transparent 1px, transparent 10px
+  );
+}
+.nft-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  background: rgba(13,13,15,0.7);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text);
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.nft-arrow:hover { background: rgba(13,13,15,0.95); border-color: rgba(255,255,255,0.3); }
+.nft-arrow-l { left: 6px; }
+.nft-arrow-r { right: 6px; }
+.nft-dots {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  z-index: 4;
+}
+.nft-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: rgba(223,217,217,0.22);
+  transition: background 0.2s;
+}
+.nft-dot.active { background: rgba(223,217,217,0.8); }
+.nft-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nft-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.nft-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.nft-input-lbl {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  opacity: 0.4;
+}
+.nft-input, .nft-buy-inp {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 7px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+  -moz-appearance: textfield;
+}
+.nft-input::-webkit-outer-spin-button,
+.nft-input::-webkit-inner-spin-button,
+.nft-buy-inp::-webkit-outer-spin-button,
+.nft-buy-inp::-webkit-inner-spin-button { -webkit-appearance: none; }
+.nft-input:focus, .nft-buy-inp:focus { border-color: var(--border-strong); }
+.nft-input::placeholder, .nft-buy-inp::placeholder { color: rgba(223,217,217,0.18); }
+.nft-buy-inp { border-color: rgba(247,134,198,0.25); }
+.nft-buy-inp:focus { border-color: rgba(247,134,198,0.55); }
+.nft-slug-inp {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(126,170,212,0.2);
+  border-radius: 0;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 4px 7px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.nft-slug-inp:focus { border-color: rgba(126,170,212,0.5); }
+.nft-slug-inp::placeholder { color: rgba(223,217,217,0.15); }
+@media (max-width: 640px)  { .nft-grid { flex-wrap: wrap; } .nft-card { flex: 1 1 calc(50% - 5px); } }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="brand">
+    <div class="mf-mark">
+      <span class="mf-bracket">[</span>
+      <span class="mf-mega">MEGAETH</span>
+      <span class="mf-pnl">PNL</span>
+      <span class="mf-cursor">_</span>
+      <span class="mf-bracket">]</span>
+    </div>
+    <span class="brand-sub">&gt;&gt; double-click name to rename</span>
+  </div>
+  <div class="header-right">
+    <span class="badge"><span class="dot"></span>4/22 activities</span>
+    <span class="ts" id="ts">not saved yet</span>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-left">
+    <h2 class="hero-title">THE REAL-TIME<br><span class="accent">PNL TRACKER.</span></h2>
+    <p class="hero-sub">&gt;&gt; invested vs current value · live pnl · updated on input</p>
+  </div>
+  <div class="wallet-wrap">
+    <div class="wallet-lbl">Wallet Address · MegaETH</div>
+    <div class="wallet-row">
+      <input type="text" id="wallet-addr" class="wallet-input" placeholder="0x…" autocomplete="off" spellcheck="false">
+      <span id="wallet-status" class="wallet-status"></span>
+    </div>
+    <div class="wallet-hint" id="wallet-hint">&gt;&gt; enter address to auto-fill cards</div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-lbl">Total Invested</div>
+    <div class="stat-val c-blue" id="s-invested">$0.00</div>
+    <div class="stat-sub" id="s-count">0 active positions</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Current Value</div>
+    <div class="stat-val" id="s-current">$0.00</div>
+    <div class="stat-sub" id="s-current-sub">&nbsp;</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Total PnL</div>
+    <div class="stat-val" id="s-pnl">$0.00</div>
+    <div class="stat-sub" id="s-pnl-sub">&nbsp;</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Return</div>
+    <div class="stat-val" id="s-ret">—</div>
+    <div class="stat-sub" id="s-win">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Best Performer</div>
+    <div class="stat-val c-green" id="s-best" style="font-size:12px;line-height:1.5">—</div>
+    <div class="stat-sub" id="s-best-v">&nbsp;</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Worst Performer</div>
+    <div class="stat-val c-pink" id="s-worst" style="font-size:12px;line-height:1.5">—</div>
+    <div class="stat-sub" id="s-worst-v">&nbsp;</div>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="filters">
+    <button class="f-btn on" data-filter="all">All</button>
+    <button class="f-btn" data-filter="trade">Trade</button>
+    <button class="f-btn" data-filter="yield">Yield</button>
+    <button class="f-btn" data-filter="defi">DeFi</button>
+    <button class="f-btn" data-filter="nft">NFT</button>
+    <button class="f-btn" data-filter="farm">Farm</button>
+    <button class="f-btn" data-filter="rwa">RWA</button>
+    <button class="f-btn" data-filter="staking">Staking</button>
+  </div>
+  <div class="sort-row">
+    <span>sort:</span>
+    <span class="s-opt on" data-sort="default">default</span>
+    <span class="s-opt" data-sort="pnl-desc">pnl ↓</span>
+    <span class="s-opt" data-sort="pnl-asc">pnl ↑</span>
+    <span class="s-opt" data-sort="pct-desc">% ↓</span>
+    <span class="s-opt" data-sort="invested-desc">size ↓</span>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="grid" id="grid"></div>
+<div class="tba-row" id="tba-row"></div>
+
+<!-- NFT FLOORS -->
+<div class="nft-section">
+  <div class="nft-section-header">
+    <span class="nft-section-label">NFT FLOORS</span>
+    <span class="nft-section-sub">&gt;&gt; opensea api · buy vs current · $USD</span>
+    <div class="nft-apikey-wrap">
+      <span class="nft-apikey-lbl">OPENSEA KEY</span>
+      <input type="password" id="nft-apikey" class="nft-apikey-input"
+        placeholder="paste api key…" autocomplete="off" spellcheck="false">
+    </div>
+    <button class="nft-sync-btn" id="nft-sync-btn" onclick="syncAllNft()">SYNC</button>
+  </div>
+  <div class="nft-grid" id="nft-grid"></div>
+
+  <!-- NFT STATS BAR -->
+  <div class="nft-stats">
+    <div class="nft-stat">
+      <div class="stat-lbl">NFT Invested</div>
+      <div class="stat-val c-blue" id="ns-invested">$0.00</div>
+      <div class="stat-sub" id="ns-count">0 collections</div>
+    </div>
+    <div class="nft-stat">
+      <div class="stat-lbl">NFT Current Value</div>
+      <div class="stat-val" id="ns-current">$0.00</div>
+      <div class="stat-sub" id="ns-current-sub">&nbsp;</div>
+    </div>
+    <div class="nft-stat">
+      <div class="stat-lbl">NFT PnL</div>
+      <div class="stat-val" id="ns-pnl">$0.00</div>
+      <div class="stat-sub" id="ns-pnl-sub">&nbsp;</div>
+    </div>
+    <div class="nft-stat">
+      <div class="stat-lbl">NFT Return</div>
+      <div class="stat-val" id="ns-ret">—</div>
+      <div class="stat-sub" id="ns-win">—</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── DATA ──────────────────────────────────────────────── */
+const DEFAULTS = [
+  { id:  1, name: "MegaETH Flux",        tag: "staking", label: "Staking" },
+  { id:  2, name: "Prism",              tag: "defi",  label: "DeFi"  },
+  { id:  3, name: "mnstr",         tag: "rwa",   label: "RWA"   },
+  { id:  4, name: "Hit.One",             tag: "defi",  label: "DeFi"  },
+  { id:  5, name: "TBA", tag: "tba", label: "TBA" },
+  { id:  6, name: "TBA", tag: "tba", label: "TBA" },
+  { id:  7, name: "TBA", tag: "tba", label: "TBA" },
+  { id:  8, name: "TBA", tag: "tba", label: "TBA" },
+  { id:  9, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 10, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 11, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 12, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 13, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 14, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 15, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 16, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 17, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 18, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 19, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 20, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 21, name: "TBA", tag: "tba", label: "TBA" },
+  { id: 22, name: "TBA", tag: "tba", label: "TBA" },
+];
+
+const KEY = 'megaeth-pnl-v1';
+let store = JSON.parse(localStorage.getItem(KEY) || '{}');
+
+let activeFilter = 'all';
+let activeSort   = 'default';
+
+/* ── HELPERS ───────────────────────────────────────────── */
+const el  = id => document.getElementById(id);
+const num = (id, f) => parseFloat(store[id]?.[f] || 0) || 0;
+
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(store));
+  const t = new Date();
+  el('ts').textContent = 'saved ' + t.toLocaleTimeString('en-US',
+    { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function fmt(n, sign = false) {
+  if (n === 0 && !sign) return '$0.00';
+  const abs = Math.abs(n);
+  const s = abs >= 10000
+    ? abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : abs.toFixed(2);
+  const prefix = n < 0 ? '-' : (sign ? '+' : '');
+  return prefix + '$' + s;
+}
+
+function pnlOf(id) {
+  const inv = num(id, 'invested');
+  const cur = num(id, 'current');
+  const pnl = cur - inv;
+  const pct = inv > 0 ? (pnl / inv) * 100 : null;
+  return { inv, cur, pnl, pct };
+}
+
+function nameOf(id) {
+  return store[id]?.name || DEFAULTS.find(a => a.id === id).name;
+}
+
+/* ── UPDATE CARD ───────────────────────────────────────── */
+function updateCard(id) {
+  const { inv, cur, pnl, pct } = pnlOf(id);
+  const pnlEl = el(`pnl-${id}`);
+  const pctEl = el(`pct-${id}`);
+  if (!pnlEl) return;
+
+  // Sync input fields so auto-filled values are visible
+  const invInp = el(`inp-inv-${id}`);
+  const curInp = el(`inp-cur-${id}`);
+  if (invInp && inv > 0 && invInp !== document.activeElement) invInp.value = inv;
+  if (curInp && cur > 0 && curInp !== document.activeElement) curInp.value = cur;
+
+  const hasData = inv > 0 || cur > 0;
+  if (!hasData) {
+    pnlEl.textContent = '—'; pnlEl.className = 'pnl-num';
+    pctEl.textContent = '';  pctEl.className = 'pnl-pct';
+    return;
+  }
+
+  const cls = pnl > 0 ? 'pos' : pnl < 0 ? 'neg' : '';
+  pnlEl.textContent = fmt(pnl, true);
+  pnlEl.className   = `pnl-num ${cls}`;
+  pctEl.textContent = pct !== null
+    ? `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`
+    : '';
+  pctEl.className = `pnl-pct ${cls}`;
+}
+
+/* ── UPDATE RANK BARS ──────────────────────────────────── */
+function updateBars() {
+  let maxAbs = 0;
+  DEFAULTS.forEach(a => {
+    const { pnl, inv, cur } = pnlOf(a.id);
+    if (inv > 0 || cur > 0) maxAbs = Math.max(maxAbs, Math.abs(pnl));
+  });
+  DEFAULTS.forEach(a => {
+    const barEl = el(`bar-${a.id}`);
+    if (!barEl) return;
+    const { pnl, inv, cur } = pnlOf(a.id);
+    if ((inv === 0 && cur === 0) || maxAbs === 0) {
+      barEl.style.width = '0'; return;
+    }
+    barEl.style.width = (Math.abs(pnl) / maxAbs * 100) + '%';
+    barEl.style.backgroundColor = pnl >= 0 ? 'var(--green)' : 'var(--pink)';
+  });
+}
+
+/* ── UPDATE STATS ──────────────────────────────────────── */
+function updateStats() {
+  let tInv = 0, tCur = 0, active = 0, wins = 0;
+  let bestPct = -Infinity, worstPct = Infinity;
+  let bestId = null, worstId = null;
+
+  DEFAULTS.forEach(a => {
+    const { inv, cur, pnl, pct } = pnlOf(a.id);
+    if (inv > 0 || cur > 0) {
+      tInv += inv; tCur += cur; active++;
+      if (pnl > 0) wins++;
+      if (pct !== null && inv > 0) {
+        if (pct > bestPct)  { bestPct  = pct;  bestId  = a.id; }
+        if (pct < worstPct) { worstPct = pct; worstId = a.id; }
+      }
+    }
+  });
+
+  const tPnl  = tCur - tInv;
+  const tPct  = tInv > 0 ? (tPnl / tInv) * 100 : null;
+
+  el('s-invested').textContent = fmt(tInv);
+  el('s-count').textContent    = `${active} active position${active !== 1 ? 's' : ''}`;
+
+  el('s-current').textContent     = fmt(tCur);
+  el('s-current-sub').textContent = active
+    ? `across ${active} position${active !== 1 ? 's' : ''}`
+    : ' ';
+
+  const pnlE = el('s-pnl');
+  pnlE.textContent = active && tInv > 0 ? fmt(tPnl, true) : '$0.00';
+  pnlE.className   = `stat-val ${tPnl > 0 ? 'c-green' : tPnl < 0 ? 'c-pink' : ''}`;
+
+  const retE = el('s-ret');
+  retE.textContent = tPct !== null
+    ? `${tPct >= 0 ? '+' : ''}${tPct.toFixed(2)}%`
+    : '—';
+  retE.className = `stat-val ${tPct > 0 ? 'c-green' : tPct < 0 ? 'c-pink' : ''}`;
+  el('s-win').textContent = active
+    ? `${wins}/${active} in profit`
+    : '—';
+
+  if (bestId) {
+    el('s-best').textContent   = nameOf(bestId);
+    el('s-best-v').textContent = `${bestPct >= 0 ? '+' : ''}${bestPct.toFixed(1)}%`;
+  } else {
+    el('s-best').textContent   = '—';
+    el('s-best-v').textContent = ' ';
+  }
+  if (worstId) {
+    el('s-worst').textContent   = nameOf(worstId);
+    el('s-worst-v').textContent = `${worstPct >= 0 ? '+' : ''}${worstPct.toFixed(1)}%`;
+  } else {
+    el('s-worst').textContent   = '—';
+    el('s-worst-v').textContent = ' ';
+  }
+}
+
+/* ── HANDLERS ──────────────────────────────────────────── */
+function onInput(id, field, val) {
+  if (!store[id]) store[id] = {};
+  store[id][field] = parseFloat(val) || 0;
+  save();
+  updateCard(id);
+  updateBars();
+  updateStats();
+}
+
+function onNameEdit(id, nameEl) {
+  nameEl.contentEditable = 'false';
+  const n = nameEl.textContent.trim();
+  if (!store[id]) store[id] = {};
+  store[id].name = n || DEFAULTS.find(a => a.id === id).name;
+  nameEl.textContent = store[id].name;
+  save();
+  updateStats();
+}
+
+/* ── RENDER CARD ───────────────────────────────────────── */
+function renderCard(a) {
+  const { inv, cur } = pnlOf(a.id);
+  const div = document.createElement('div');
+  div.className = a.id >= 5 ? 'card card-inactive' : 'card';
+  div.dataset.tag = a.tag;
+  div.dataset.id  = a.id;
+  div.innerHTML = `
+    <div class="accent-bar"></div>
+    <div class="card-top">
+      <span class="card-num">#${String(a.id).padStart(2,'0')}</span>
+      <span class="tag tag-${a.tag}">${a.label}</span>
+    </div>
+    <div class="card-name"
+      id="name-${a.id}"
+      title="Double-click to rename"
+      ondblclick="this.contentEditable='true';this.focus();document.execCommand('selectAll',false,null)"
+      onblur="onNameEdit(${a.id},this)"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}"
+    >${nameOf(a.id)}</div>
+    ${a.id === 1 ? `
+    <div class="card-wallet">
+      <span class="card-wallet-lbl">Staking · uses main wallet</span>
+      <span class="card-wallet-status" id="flux-status"></span>
+    </div>` : ''}
+    ${a.id === 3 ? `
+    <div class="card-wallet">
+      <input type="text" class="card-wallet-input" id="mnstr-addr"
+        placeholder="0x… mnstr wallet" autocomplete="off" spellcheck="false"
+        value="${store[3]?._wallet || ''}"
+        >
+      <span class="card-wallet-status" id="mnstr-status"></span>
+    </div>` : ''}
+    ${a.id === 4 ? `
+    <div class="card-wallet">
+      <input type="text" class="card-wallet-input" id="hitone-addr"
+        placeholder="0x… Hit.One wallet" autocomplete="off" spellcheck="false"
+        value="${store[4]?._wallet || ''}"
+        >
+      <span class="card-wallet-status" id="hitone-status"></span>
+    </div>` : ''}
+    <div class="fields">
+      <div>
+        <div class="field-lbl">Invested ($)</div>
+        <input type="number" id="inp-inv-${a.id}" placeholder="0.00" step="0.01" min="0"
+          value="${inv || ''}"
+          oninput="onInput(${a.id},'invested',this.value)">
+      </div>
+      <div>
+        <div class="field-lbl">Current Val ($)</div>
+        <input type="number" id="inp-cur-${a.id}" placeholder="0.00" step="0.01" min="0"
+          value="${cur || ''}"
+          oninput="onInput(${a.id},'current',this.value)">
+      </div>
+    </div>
+    <div class="card-pnl">
+      <span class="pnl-num" id="pnl-${a.id}">—</span>
+      <span class="pnl-pct" id="pct-${a.id}"></span>
+    </div>
+    <div class="card-bar"><div class="card-bar-fill" id="bar-${a.id}"></div></div>
+  `;
+  return div;
+}
+
+/* ── FILTER + SORT ─────────────────────────────────────── */
+function applyView() {
+  const grid = el('grid');
+  let acts = [...DEFAULTS];
+
+  if (activeSort === 'pnl-desc')      acts.sort((a,b) => pnlOf(b.id).pnl - pnlOf(a.id).pnl);
+  else if (activeSort === 'pnl-asc')  acts.sort((a,b) => pnlOf(a.id).pnl - pnlOf(b.id).pnl);
+  else if (activeSort === 'pct-desc') acts.sort((a,b) => (pnlOf(b.id).pct ?? -Infinity) - (pnlOf(a.id).pct ?? -Infinity));
+  else if (activeSort === 'invested-desc') acts.sort((a,b) => pnlOf(b.id).inv - pnlOf(a.id).inv);
+
+  acts.filter(a => a.id < 5).forEach(a => {
+    const c = grid.querySelector(`[data-id="${a.id}"]`);
+    if (c) grid.appendChild(c);
+  });
+
+  grid.querySelectorAll('.card').forEach(c => {
+    c.style.display =
+      activeFilter === 'all' || c.dataset.tag === activeFilter ? '' : 'none';
+  });
+
+  // TBA row: hide when a specific filter is active (TBA cards have tag "tba")
+  const tbaRow = el('tba-row');
+  if (tbaRow) tbaRow.style.display =
+    activeFilter === 'all' || activeFilter === 'tba' ? '' : 'none';
+}
+
+/* ── INIT ──────────────────────────────────────────────── */
+const grid    = el('grid');
+const tbaRow  = el('tba-row');
+DEFAULTS.forEach(a => (a.id >= 5 ? tbaRow : grid).appendChild(renderCard(a)));
+DEFAULTS.forEach(a => updateCard(a.id));
+updateBars();
+updateStats();
+
+document.querySelectorAll('.f-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeFilter = btn.dataset.filter;
+    document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    applyView();
+  });
+});
+
+document.querySelectorAll('.s-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeSort = btn.dataset.sort;
+    document.querySelectorAll('.s-opt').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    applyView();
+  });
+});
+
+/* ── WALLET / BLOCKCHAIN ───────────────────────────────── */
+const SCAN           = 'https://megaeth.blockscout.com/api/v2';
+const RPC            = 'https://megaeth.blockscout.com/api/eth-rpc';
+const PRISM_CONTRACT = '0xcb91c75a6B29700756d4411495be696c4e9A576E';
+const FLUX_CONTRACT  = '0x42bfAAA203B8259270A1b5EF4576dB6b8359Daa1';
+
+let walletTimer = null;
+
+function setWalletStatus(state, text) {
+  const s = el('wallet-status');
+  s.dataset.state = state;
+  s.textContent   = text;
+}
+
+function setWalletHint(text) {
+  el('wallet-hint').textContent = text;
+}
+
+el('wallet-addr').addEventListener('input', function () {
+  clearTimeout(walletTimer);
+  const addr = this.value.trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+    setWalletStatus('', '');
+    setWalletHint('>> enter address to auto-fill cards');
+    return;
+  }
+  setWalletStatus('loading', 'CONNECTING…');
+  walletTimer = setTimeout(() => fetchWallet(addr), 700);
+});
+
+async function fetchWallet(addr) {
+  try {
+    const infoRes = await fetch(`${SCAN}/addresses/${addr}`);
+    if (!infoRes.ok) throw new Error(infoRes.status);
+    const info   = await infoRes.json();
+    const ethBal = parseFloat(info.coin_balance || 0) / 1e18;
+    const short  = addr.slice(0,6) + '…' + addr.slice(-4);
+    setWalletStatus('ok', 'CONNECTED');
+    setWalletHint(`>> ${short} · ${info.transaction_count ?? 0} txs · ${ethBal.toFixed(4)} ETH`);
+    loadFluxCard(addr);
+    loadPrismCard(addr);
+  } catch (e) {
+    setWalletStatus('err', 'ERROR');
+    setWalletHint(`>> ${e.message || e}`);
+    console.error('[fetchWallet]', e);
+  }
+}
+
+/* ── ABI helpers ─────────────────────────────────────── */
+function pad32(n)     { return BigInt(n).toString(16).padStart(64, '0'); }
+function padAddr(a)   { return a.replace('0x','').toLowerCase().padStart(64, '0'); }
+function slotHex(h,i) { return h.slice(i*64, (i+1)*64); }
+function toUint(h,i)  { return BigInt('0x' + slotHex(h,i)); }
+function toAddr(h,i)  { return '0x' + slotHex(h,i).slice(24); }
+function toInt(h,i)   {
+  const v = BigInt('0x' + slotHex(h,i));
+  return v >= (1n << 255n) ? Number(v - (1n << 256n)) : Number(v);
+}
+
+async function ethCall(to, data) {
+  const r = await fetch(RPC, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'eth_call', params:[{to, data},'latest'] })
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message);
+  return (j.result || '0x').slice(2);
+}
+
+/* ── Uniswap V3 math ─────────────────────────────────── */
+function tickToSqrt(tick) { return Math.sqrt(Math.pow(1.0001, tick)); }
+
+function positionAmounts(sqrtP, sqrtA, sqrtB, liq) {
+  const L = Number(liq);
+  if (sqrtP <= sqrtA) return [L * (sqrtB - sqrtA) / (sqrtA * sqrtB), 0];
+  if (sqrtP >= sqrtB) return [0, L * (sqrtB - sqrtA)];
+  return [
+    L * (sqrtB - sqrtP) / (sqrtP * sqrtB),
+    L * (sqrtP - sqrtA),
+  ];
+}
+
+/* ── Deposit history helpers ─────────────────────────── */
+const WETH_ADDR        = '0x4200000000000000000000000000000000000006';
+const IL_TOPIC         = '0x3067048beee31b25b2f1681f88dac838c8bba36af25bfb2b7cf7473a5847e35f';
+const PRISM_FROM_BLOCK = '0x77ADF8';  // block 7845880 — Prism contract deploy
+
+const _ethPriceCache = {};
+
+async function ethLogs(filter) {
+  const r = await fetch(RPC, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'eth_getLogs', params:[filter] })
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message);
+  return j.result || [];
+}
+
+async function blockTimestamp(blockHex) {
+  const r = await fetch(RPC, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'eth_getBlockByNumber', params:[blockHex, false] })
+  });
+  const j = await r.json();
+  return parseInt(j.result?.timestamp || '0', 16);
+}
+
+async function ethPriceOnDate(dateStr) {
+  if (_ethPriceCache[dateStr] !== undefined) return _ethPriceCache[dateStr];
+  try {
+    const [y, m, d] = dateStr.split('-');
+    const r = await fetch(
+      `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${d}-${m}-${y}&localization=false`
+    );
+    const j = await r.json();
+    const price = j.market_data?.current_price?.usd ?? null;
+    _ethPriceCache[dateStr] = price;
+    return price;
+  } catch {
+    _ethPriceCache[dateStr] = null;
+    return null;
+  }
+}
+
+/* ── MegaETH Flux staking card loader ────────────────────── */
+const MEGA_TOKEN = '0x28B7E77f82B25B95953825F1E3eA0E36c1c29861';
+
+async function loadFluxCard(wallet) {
+  const statusEl = el('flux-status');
+  if (statusEl) { statusEl.dataset.state = 'loading'; statusEl.textContent = 'LOADING…'; }
+  try {
+    // MEGA token price from Blockscout
+    const tokenRes  = await fetch(`${SCAN}/tokens/${MEGA_TOKEN}`);
+    const tokenData = tokenRes.ok ? await tokenRes.json() : {};
+    const megaUsd   = parseFloat(tokenData.exchange_rate || 0);
+    const megaDec   = parseInt(tokenData.decimals ?? 18);
+
+    // getUserStakes(address) — confirmed selector 0x842e2981
+    // Sum every word that's large enough to be a MEGA amount in 18-dec units.
+    // Timestamps (~1.78e9) and IDs (small ints) are far below 10^12; amounts are 10^18+.
+    const raw    = await ethCall(FLUX_CONTRACT, '0x842e2981' + padAddr(wallet));
+    const nWords = Math.floor(raw.length / 64);
+    const THRESHOLD = 10n ** 12n;
+    let totalRaw = 0n;
+    for (let w = 2; w < nWords; w++) {
+      const val = toUint(raw, w);
+      if (val >= THRESHOLD) totalRaw += val;
+    }
+
+    const megaStaked = Number(totalRaw) / 10 ** megaDec;
+    const currentUsd = megaStaked * megaUsd;
+
+    if (!store[1]) store[1] = {};
+    store[1].current = parseFloat(currentUsd.toFixed(2));
+    save();
+    updateCard(1);
+    updateBars();
+    updateStats();
+
+    if (statusEl) {
+      statusEl.dataset.state = megaStaked > 0 ? 'ok' : 'err';
+      statusEl.textContent   = megaStaked > 0
+        ? megaStaked.toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' MEGA'
+        : 'NO DATA';
+    }
+  } catch (e) {
+    if (statusEl) { statusEl.dataset.state = 'err'; statusEl.textContent = 'ERR'; }
+    console.error('[loadFluxCard]', e);
+  }
+}
+
+/* ── Prism card loader (Uniswap V3 NonfungiblePositionManager) ── */
+async function loadPrismCard(wallet) {
+  try {
+    const balHex = await ethCall(PRISM_CONTRACT, '0x70a08231' + padAddr(wallet));
+    const count  = Number(toUint(balHex, 0));
+    if (count === 0) {
+      setWalletHint(el('wallet-hint').textContent + ' · no Prism positions');
+      return;
+    }
+
+    const tokenIds = await Promise.all(
+      Array.from({ length: Math.min(count, 20) }, (_, i) =>
+        ethCall(PRISM_CONTRACT, '0x2f745c59' + padAddr(wallet) + pad32(i))
+          .then(r => toUint(r, 0))
+      )
+    );
+
+    const factHex = await ethCall(PRISM_CONTRACT, '0xc45a0155');
+    const factory = toAddr(factHex, 0);
+
+    const positions = await Promise.all(tokenIds.map(async id => {
+      const h = await ethCall(PRISM_CONTRACT, '0x99fbab88' + pad32(id));
+      return {
+        tokenId: id,
+        token0: toAddr(h, 2), token1: toAddr(h, 3),
+        fee:    Number(toUint(h, 4)),
+        tickL:  toInt(h, 5),  tickU:  toInt(h, 6),
+        liq:    toUint(h, 7),
+        owed0:  toUint(h, 10), owed1: toUint(h, 11),
+      };
+    }));
+
+    const poolMap = {};
+    await Promise.all([...new Set(positions.map(p => `${p.token0}|${p.token1}|${p.fee}`))].map(async key => {
+      const [t0, t1, fee] = key.split('|');
+      const ph   = await ethCall(factory, '0x1698ee82' + padAddr(t0) + padAddr(t1) + pad32(fee));
+      const pool = toAddr(ph, 0);
+      if (/^0x0+$/.test(pool)) return;
+      const s0   = await ethCall(pool, '0x3850c7bd');
+      poolMap[key] = toUint(s0, 0);
+    }));
+
+    const tokenMeta = {};
+    await Promise.all([...new Set(positions.flatMap(p => [p.token0, p.token1]))].map(async addr => {
+      try {
+        const d = await (await fetch(`${SCAN}/tokens/${addr}`)).json();
+        tokenMeta[addr.toLowerCase()] = {
+          dec: parseInt(d.decimals ?? 18),
+          usd: parseFloat(d.exchange_rate ?? 0),
+        };
+      } catch {
+        tokenMeta[addr.toLowerCase()] = { dec: 18, usd: 0 };
+      }
+    }));
+
+    /* ── Current value ─────────────────────────────────── */
+    const Q96 = 2n ** 96n;
+    let totalUsd = 0;
+
+    for (const pos of positions) {
+      if (pos.liq === 0n && pos.owed0 === 0n && pos.owed1 === 0n) continue;
+      const key = `${pos.token0}|${pos.token1}|${pos.fee}`;
+      const sqX96 = poolMap[key];
+      const t0 = tokenMeta[pos.token0.toLowerCase()] ?? { dec:18, usd:0 };
+      const t1 = tokenMeta[pos.token1.toLowerCase()] ?? { dec:18, usd:0 };
+      if (sqX96 && pos.liq > 0n) {
+        const sqrtP = Number(sqX96) / Number(Q96);
+        const [a0, a1] = positionAmounts(sqrtP, tickToSqrt(pos.tickL), tickToSqrt(pos.tickU), pos.liq);
+        totalUsd += (a0 / 10**t0.dec) * t0.usd;
+        totalUsd += (a1 / 10**t1.dec) * t1.usd;
+      }
+      totalUsd += (Number(pos.owed0) / 10**t0.dec) * t0.usd;
+      totalUsd += (Number(pos.owed1) / 10**t1.dec) * t1.usd;
+    }
+
+    /* ── Invested amount (IncreaseLiquidity events + historical ETH prices) ── */
+    // Fetch all IncreaseLiquidity logs for all tokenIds in parallel
+    const ilLogsByToken = await Promise.all(
+      positions.map(pos =>
+        ethLogs({
+          address:   PRISM_CONTRACT,
+          fromBlock: PRISM_FROM_BLOCK,
+          toBlock:   'latest',
+          topics:    [IL_TOPIC, '0x' + pos.tokenId.toString(16).padStart(64, '0')],
+        }).catch(() => [])
+      )
+    );
+
+    // Collect unique block numbers across all logs
+    const allLogs = ilLogsByToken.flat();
+    const uniqueBlocks = [...new Set(allLogs.map(l => l.blockNumber))];
+
+    // Fetch timestamps for all unique blocks in parallel
+    const tsMap = {};
+    await Promise.all(uniqueBlocks.map(async bn => {
+      tsMap[bn] = await blockTimestamp(bn).catch(() => 0);
+    }));
+
+    // Collect unique YYYY-MM-DD dates where WETH appears
+    const needEthPrice = new Set();
+    for (let i = 0; i < positions.length; i++) {
+      const pos = positions[i];
+      const isWeth0 = pos.token0.toLowerCase() === WETH_ADDR.toLowerCase();
+      const isWeth1 = pos.token1.toLowerCase() === WETH_ADDR.toLowerCase();
+      if (!isWeth0 && !isWeth1) continue;
+      for (const log of ilLogsByToken[i]) {
+        const ts = tsMap[log.blockNumber];
+        if (ts) needEthPrice.add(new Date(ts * 1000).toISOString().slice(0, 10));
+      }
+    }
+
+    // Fetch ETH historical prices in parallel (CoinGecko, cached by date)
+    await Promise.all([...needEthPrice].map(dateStr => ethPriceOnDate(dateStr)));
+
+    // Calculate invested USD
+    let totalInvested = 0;
+    for (let i = 0; i < positions.length; i++) {
+      const pos  = positions[i];
+      const t0   = tokenMeta[pos.token0.toLowerCase()] ?? { dec:18, usd:0 };
+      const t1   = tokenMeta[pos.token1.toLowerCase()] ?? { dec:18, usd:0 };
+      const isWeth0 = pos.token0.toLowerCase() === WETH_ADDR.toLowerCase();
+      const isWeth1 = pos.token1.toLowerCase() === WETH_ADDR.toLowerCase();
+
+      for (const log of ilLogsByToken[i]) {
+        const d       = log.data.replace('0x', '');
+        const amount0 = toUint(d, 1);
+        const amount1 = toUint(d, 2);
+        const ts      = tsMap[log.blockNumber] || 0;
+        const dateStr = ts ? new Date(ts * 1000).toISOString().slice(0, 10) : null;
+
+        // Use CoinGecko ETH price for WETH legs; current Blockscout rate for everything else
+        const price0 = isWeth0 && dateStr ? (_ethPriceCache[dateStr] ?? t0.usd) : t0.usd;
+        const price1 = isWeth1 && dateStr ? (_ethPriceCache[dateStr] ?? t1.usd) : t1.usd;
+
+        totalInvested += (Number(amount0) / 10**t0.dec) * price0;
+        totalInvested += (Number(amount1) / 10**t1.dec) * price1;
+      }
+    }
+
+    if (!store[2]) store[2] = {};
+    store[2].current  = parseFloat(totalUsd.toFixed(2));
+    if (totalInvested > 0) store[2].invested = parseFloat(totalInvested.toFixed(2));
+    save();
+    updateCard(2);
+    updateBars();
+    updateStats();
+
+    const short = wallet.slice(0,6) + '…' + wallet.slice(-4);
+    const pnlSign = totalUsd - totalInvested >= 0 ? '+' : '';
+    const pnlStr  = totalInvested > 0
+      ? ` · P&L ${pnlSign}$${(totalUsd - totalInvested).toFixed(2)}`
+      : '';
+    setWalletHint(`>> ${short} · ${count} position${count!==1?'s':''} · $${totalUsd.toFixed(2)}${pnlStr}`);
+  } catch (e) {
+    setWalletHint(`>> Prism load failed: ${e.message}`);
+    console.error('[loadPrismCard]', e);
+  }
+}
+
+/* ── mnstr card ─────────────────────────────────────── */
+let mnstrTimer = null;
+
+function onMnstrAddr(val) {
+  clearTimeout(mnstrTimer);
+  const addr = val.trim();
+  const statusEl = el('mnstr-status');
+  if (!statusEl) return;
+
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+    statusEl.dataset.state = '';
+    statusEl.textContent   = '';
+    return;
+  }
+
+  statusEl.dataset.state = 'loading';
+  statusEl.textContent   = 'LOADING…';
+
+  // Persist the wallet address in store so it survives reload
+  if (!store[3]) store[3] = {};
+  store[3]._wallet = addr;
+  save();
+
+  mnstrTimer = setTimeout(() => loadMnstrCard(addr), 700);
+}
+
+async function loadMnstrCard(addr) {
+  const statusEl = el('mnstr-status');
+  try {
+    // ── Current balance: ETH + ERC-20 tokens ─────────────
+    const [infoRes, tokensRaw] = await Promise.all([
+      fetch(`${SCAN}/addresses/${addr}`),
+      fetch(`${SCAN}/addresses/${addr}/token-balances`),
+    ]);
+    if (!infoRes.ok) throw new Error(infoRes.status);
+
+    const info      = await infoRes.json();
+    const ethPrice  = parseFloat(info.exchange_rate || 0);
+    const ethBal    = parseFloat(info.coin_balance  || 0) / 1e18;
+    let   currentUsd = ethBal * ethPrice;
+
+    const tokens    = tokensRaw.ok ? await tokensRaw.json() : [];
+    const tokenList = Array.isArray(tokens) ? tokens : (tokens.items || []);
+
+    const tokPriceMap = {};
+    for (const t of tokenList) {
+      const dec   = parseInt(t.token?.decimals   ?? 18);
+      const price = parseFloat(t.token?.exchange_rate ?? 0);
+      currentUsd += (parseFloat(t.value || 0) / Math.pow(10, dec)) * price;
+      const ta = (t.token?.address_hash || '').toLowerCase();
+      if (ta) tokPriceMap[ta] = { dec, usd: price };
+    }
+
+    // ── Funded amount ─────────────────────────────────────
+    // Single eth_getLogs call from Prism deploy block to latest.
+    // topics[1]=null means "any from", topics[2]=wallet means "to wallet".
+    // The RPC may return both directions, so verify toAddr client-side.
+    const TRANSFER_TOPIC  = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+    const EXCLUDED_SENDER = '0x61fccfc0279b09c387608efff56fd9187e61d2874';
+    const walletLower     = addr.toLowerCase();
+    const paddedWallet    = '0x' + walletLower.replace('0x','').padStart(64,'0');
+
+    const transferLogs = await ethLogs({
+      fromBlock: PRISM_FROM_BLOCK,
+      toBlock:   'latest',
+      topics:    [TRANSFER_TOPIC, null, paddedWallet],
+    }).catch(() => []);
+
+    let fundedUsd = 0;
+    for (const log of transferLogs) {
+      const toAddr = ('0x' + (log.topics?.[2] || '').slice(-40)).toLowerCase();
+      if (toAddr !== walletLower) continue;                 // must be inflow
+
+      const fromAddr = ('0x' + (log.topics?.[1] || '').slice(-40)).toLowerCase();
+      if (fromAddr === EXCLUDED_SENDER) continue;           // skip excluded sender
+
+      const ta   = (log.address || '').toLowerCase();
+      const meta = tokPriceMap[ta] ?? { dec: 18, usd: 0 };
+      const raw  = BigInt('0x' + (log.data || '0x').replace('0x','').padStart(64,'0'));
+      fundedUsd += (Number(raw) / 10**meta.dec) * meta.usd;
+    }
+
+    // Native ETH inflows (transaction list, Blockscout indexes these when available)
+    let fundedEth = 0;
+    let pageUrl   = `${SCAN}/addresses/${addr}/transactions?limit=50`;
+    let pages     = 0;
+    while (pageUrl && pages < 10) {
+      const txRes = await fetch(pageUrl);
+      if (!txRes.ok) break;
+      const txData = await txRes.json();
+      for (const tx of (txData.items || [])) {
+        if (tx.to?.hash?.toLowerCase() === walletLower)
+          fundedEth += parseFloat(tx.value || 0) / 1e18;
+      }
+      const np = txData.next_page_params;
+      pageUrl  = np ? `${SCAN}/addresses/${addr}/transactions?limit=50&${new URLSearchParams(np)}` : null;
+      pages++;
+    }
+    fundedUsd += fundedEth * ethPrice;
+
+    if (!store[3]) store[3] = {};
+    store[3].current  = parseFloat(currentUsd.toFixed(2));
+    if (fundedUsd > 0) store[3].invested = parseFloat(fundedUsd.toFixed(2));
+    save();
+    updateCard(3);
+    updateBars();
+    updateStats();
+
+    if (statusEl) { statusEl.dataset.state = 'ok'; statusEl.textContent = 'OK'; }
+  } catch (e) {
+    if (statusEl) { statusEl.dataset.state = 'err'; statusEl.textContent = 'ERR'; }
+    console.error('[loadMnstrCard]', e);
+  }
+}
+
+// Wire up mnstr address input via addEventListener (more reliable than inline oninput)
+(function () {
+  const input = el('mnstr-addr');
+  if (input) {
+    const handler = function () { onMnstrAddr(this.value); };
+    input.addEventListener('input',  handler);
+    input.addEventListener('change', handler);
+  }
+
+  // Auto-load if wallet was saved from a previous session
+  const saved = store[3]?._wallet;
+  if (saved && /^0x[0-9a-fA-F]{40}$/.test(saved)) {
+    loadMnstrCard(saved);
+  }
+})();
+
+/* ── Hit.One card ────────────────────────────────────── */
+let hitoneTimer = null;
+
+function onHitOneAddr(val) {
+  clearTimeout(hitoneTimer);
+  const addr = val.trim();
+  const statusEl = el('hitone-status');
+  if (!statusEl) return;
+
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+    statusEl.dataset.state = '';
+    statusEl.textContent   = '';
+    return;
+  }
+
+  statusEl.dataset.state = 'loading';
+  statusEl.textContent   = 'LOADING…';
+
+  if (!store[4]) store[4] = {};
+  store[4]._wallet = addr;
+  save();
+
+  hitoneTimer = setTimeout(() => loadHitOneCard(addr), 700);
+}
+
+async function loadHitOneCard(addr) {
+  const statusEl = el('hitone-status');
+  try {
+    const [infoRes, tokensRaw] = await Promise.all([
+      fetch(`${SCAN}/addresses/${addr}`),
+      fetch(`${SCAN}/addresses/${addr}/token-balances`),
+    ]);
+    if (!infoRes.ok) throw new Error(infoRes.status);
+
+    const info      = await infoRes.json();
+    const ethPrice  = parseFloat(info.exchange_rate || 0);
+    const ethBal    = parseFloat(info.coin_balance  || 0) / 1e18;
+    let   currentUsd = ethBal * ethPrice;
+
+    const tokens    = tokensRaw.ok ? await tokensRaw.json() : [];
+    const tokenList = Array.isArray(tokens) ? tokens : (tokens.items || []);
+
+    const tokPriceMap = {};
+    for (const t of tokenList) {
+      const dec   = parseInt(t.token?.decimals   ?? 18);
+      const price = parseFloat(t.token?.exchange_rate ?? 0);
+      currentUsd += (parseFloat(t.value || 0) / Math.pow(10, dec)) * price;
+      const ta = (t.token?.address_hash || '').toLowerCase();
+      if (ta) tokPriceMap[ta] = { dec, usd: price };
+    }
+
+    const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+    const walletLower    = addr.toLowerCase();
+    const paddedWallet   = '0x' + walletLower.replace('0x','').padStart(64,'0');
+
+    const transferLogs = await ethLogs({
+      fromBlock: PRISM_FROM_BLOCK,
+      toBlock:   'latest',
+      topics:    [TRANSFER_TOPIC, null, paddedWallet],
+    }).catch(() => []);
+
+    let fundedUsd = 0;
+    for (const log of transferLogs) {
+      const toAddr = ('0x' + (log.topics?.[2] || '').slice(-40)).toLowerCase();
+      if (toAddr !== walletLower) continue;
+
+      const ta   = (log.address || '').toLowerCase();
+      const meta = tokPriceMap[ta] ?? { dec: 18, usd: 0 };
+      const raw  = BigInt('0x' + (log.data || '0x').replace('0x','').padStart(64,'0'));
+      fundedUsd += (Number(raw) / 10**meta.dec) * meta.usd;
+    }
+
+    let fundedEth = 0;
+    let pageUrl   = `${SCAN}/addresses/${addr}/transactions?limit=50`;
+    let pages     = 0;
+    while (pageUrl && pages < 10) {
+      const txRes = await fetch(pageUrl);
+      if (!txRes.ok) break;
+      const txData = await txRes.json();
+      for (const tx of (txData.items || [])) {
+        if (tx.to?.hash?.toLowerCase() === walletLower)
+          fundedEth += parseFloat(tx.value || 0) / 1e18;
+      }
+      const np = txData.next_page_params;
+      pageUrl  = np ? `${SCAN}/addresses/${addr}/transactions?limit=50&${new URLSearchParams(np)}` : null;
+      pages++;
+    }
+    fundedUsd += fundedEth * ethPrice;
+
+    if (!store[4]) store[4] = {};
+    store[4].current  = parseFloat(currentUsd.toFixed(2));
+    if (fundedUsd > 0) store[4].invested = parseFloat(fundedUsd.toFixed(2));
+    save();
+    updateCard(4);
+    updateBars();
+    updateStats();
+
+    if (statusEl) { statusEl.dataset.state = 'ok'; statusEl.textContent = 'OK'; }
+  } catch (e) {
+    if (statusEl) { statusEl.dataset.state = 'err'; statusEl.textContent = 'ERR'; }
+    console.error('[loadHitOneCard]', e);
+  }
+}
+
+(function () {
+  const input = el('hitone-addr');
+  if (input) {
+    const handler = function () { onHitOneAddr(this.value); };
+    input.addEventListener('input',  handler);
+    input.addEventListener('change', handler);
+  }
+
+  const saved = store[4]?._wallet;
+  if (saved && /^0x[0-9a-fA-F]{40}$/.test(saved)) {
+    loadHitOneCard(saved);
+  }
+})();
+
+/* ── NFT floor tracker ───────────────────────────────── */
+const NFT_COLLECTIONS = [
+  { key: 'netizens', name: 'Netizens', chain: 'megaeth',  contract: null },
+  { key: 'breadio',  name: 'Breadio',  chain: 'megaeth',  contract: null },
+  { key: 'megalio',  name: 'Megalio',  chain: 'ethereum', imageChain: 'megaeth', contract: null },
+  { key: 'deadbits', name: 'Deadbits', chain: 'megaeth',  contract: '0x8a01e97adC0a1883255eaD1cd166629b983c80BF' },
+];
+const NFT_STORE_KEY = 'nft_floors_v3';
+
+let nftEthUsd = 0;
+
+let nftStore = (() => {
+  try { return JSON.parse(localStorage.getItem(NFT_STORE_KEY)) || {}; }
+  catch { return {}; }
+})();
+
+function saveNftStore() { localStorage.setItem(NFT_STORE_KEY, JSON.stringify(nftStore)); }
+
+function nftData(key) {
+  const d = nftStore[key];
+  if (!d || typeof d !== 'object') {
+    nftStore[key] = { floor: 0, prevFloor: null, userBuys: [], buy: 0, buyUsd: 0, buyDate: null, slug: null, contract: null, imageUrls: [] };
+  } else {
+    if (d.floor      === undefined) d.floor     = d.salesHistory?.at(-1)?.eth ?? 0;
+    if (d.prevFloor  === undefined) d.prevFloor = d.salesHistory?.at(-2)?.eth ?? null;
+    if (!d.userBuys)                d.userBuys  = [];
+    if (!Array.isArray(d.imageUrls)) d.imageUrls = d.imageUrl ? [d.imageUrl] : [];
+  }
+  return nftStore[key];
+}
+
+
+// ── OpenSea API helpers ────────────────────────────────
+const OS_API       = 'https://api.opensea.io/api/v2';
+const OS_KEY_STORE = 'nft_opensea_key';
+const ETH_SCAN     = 'https://eth.blockscout.com/api/v2';
+// OpenSea chain ids to try for MegaETH collections
+const MEGAETH_OS_CHAINS = ['megaeth', 'mega_eth'];
+
+function getOsKey() {
+  return document.getElementById('nft-apikey')?.value.trim() ||
+    localStorage.getItem(OS_KEY_STORE) || '';
+}
+
+function osHeaders() {
+  const key = getOsKey();
+  const h = { Accept: 'application/json' };
+  if (key) h['x-api-key'] = key;
+  return h;
+}
+
+
+// ── Slug auto-discovery: Blockscout search → OpenSea contract lookup ──
+async function discoverSlug(name, chain) {
+  const scanBase = chain === 'ethereum' ? ETH_SCAN : SCAN;
+  try {
+    const r = await fetch(`${scanBase}/search?q=${encodeURIComponent(name)}`);
+    if (!r.ok) return null;
+    const items = (await r.json()).items || [];
+    const tok = items.find(it =>
+      it.type === 'token' &&
+      (it.token_type === 'ERC-721' || it.token_type === 'ERC-1155')
+    );
+    const contract = tok?.address || tok?.address_hash;
+    if (!contract) return null;
+
+    const osChains = chain === 'ethereum' ? ['ethereum'] : MEGAETH_OS_CHAINS;
+    for (const c of osChains) {
+      try {
+        const res = await fetch(
+          `${OS_API}/chain/${c}/contract/${contract}/nfts?limit=1`,
+          { headers: osHeaders() }
+        );
+        if (res.ok) {
+          const slug = (await res.json()).nfts?.[0]?.collection;
+          if (slug) return slug;
+        }
+      } catch {}
+    }
+  } catch {}
+  return null;
+}
+
+// ── Current floor price ────────────────────────────────
+async function fetchOsFloor(slug) {
+  const r = await fetch(`${OS_API}/collections/${slug}/stats`, { headers: osHeaders() });
+  if (!r.ok) return null;
+  const d = await r.json();
+  const floor = parseFloat(d.total?.floor_price ?? 0);
+  return floor > 0 ? floor : null;
+}
+
+// ── Parse one OS sale event into {ts, eth} ─────────────
+function parseOsEvent(e) {
+  const pay = e.payment || {};
+  const sym = pay.symbol || '';
+  if (sym !== 'ETH' && sym !== 'WETH') return null;
+  const dec = parseInt(pay.decimals ?? 18);
+  const eth = parseFloat(pay.quantity || 0) / 10 ** dec;
+  return eth > 0 ? { ts: e.event_timestamp, eth } : null;
+}
+
+// ── Paginated collection sale events ──────────────────
+
+// ── All user buys for one collection ──────────────────
+async function fetchAllUserBuys(wallet, slug, chain) {
+  const walletLower = wallet.toLowerCase();
+  const buys = [];
+  let cursor = null;
+  for (let page = 0; page < 5; page++) {
+    const params = new URLSearchParams({ event_type: 'sale', chain, limit: '50' });
+    if (cursor) params.set('next', cursor);
+    const r = await fetch(`${OS_API}/events/accounts/${wallet}?${params}`, { headers: osHeaders() });
+    if (!r.ok) break;
+    const body  = await r.json();
+    const batch = (body.asset_events || []).filter(e =>
+      e.buyer?.toLowerCase() === walletLower &&
+      (e.nft?.collection === slug || e.asset?.collection?.slug === slug)
+    );
+    for (const e of batch) {
+      const p = parseOsEvent(e);
+      if (!p) continue;
+      const dateStr      = new Date(p.ts * 1000).toISOString().slice(0, 10);
+      const histEthPrice = await ethPriceOnDate(dateStr);
+      buys.push({ t: p.ts * 1000, eth: p.eth, usd: histEthPrice ? parseFloat((p.eth * histEthPrice).toFixed(2)) : 0 });
+    }
+    if (!body.next) break;
+    cursor = body.next;
+    await new Promise(res => setTimeout(res, 350));
+  }
+  return buys.sort((a, b) => a.t - b.t);
+}
+
+async function fetchNftImageFromChain(col, wallet, d) {
+  const imgChain = col.imageChain || col.chain;
+  const scanBase = imgChain === 'ethereum' ? ETH_SCAN : SCAN;
+
+  // Hardcoded contract always wins; if none, clear stale cache so search re-runs
+  if (col.contract) {
+    d.contract = col.contract;
+  } else {
+    d.contract = null;
+  }
+  if (!d.contract) {
+    try {
+      const r = await fetch(`${scanBase}/search?q=${encodeURIComponent(col.name)}`);
+      if (r.ok) {
+        const items = (await r.json()).items || [];
+        const tok = items.find(it =>
+          it.type === 'token' &&
+          (it.token_type === 'ERC-721' || it.token_type === 'ERC-1155')
+        );
+        const addr = tok?.address_hash || tok?.address;
+        if (addr) d.contract = addr;
+      }
+    } catch {}
+  }
+  if (!d.contract) return [];
+
+  const imgs = [];
+  let extraParams = '';
+  for (let page = 0; page < 20; page++) {
+    try {
+      const url = `${scanBase}/tokens/${d.contract}/instances?holder_address_hash=${wallet}${extraParams}`;
+      const r = await fetch(url);
+      if (!r.ok) break;
+      const body = await r.json();
+      for (const inst of body.items || []) {
+        const img = inst?.image_url || inst?.metadata?.image;
+        if (img) imgs.push(img.startsWith('ipfs://') ? img.replace('ipfs://', 'https://ipfs.io/ipfs/') : img);
+      }
+      if (!body.next_page_params) break;
+      const np = Object.entries(body.next_page_params)
+        .filter(([, v]) => v != null)
+        .map(([k, v]) => `&${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+        .join('');
+      extraParams = np;
+      await new Promise(res => setTimeout(res, 200));
+    } catch { break; }
+  }
+  return imgs;
+}
+
+// ── Sync one collection ────────────────────────────────
+async function syncNftCollection(col, wallet) {
+  const statusEl = document.getElementById(`nft-status-${col.key}`);
+  const setStatus = (s, t) => { if (statusEl) { statusEl.dataset.state = s; statusEl.textContent = t; } };
+  setStatus('loading', 'SYNCING…');
+  try {
+    const d     = nftData(col.key);
+    const chain = col.chain;
+
+    // 1. NFT images from Blockscout (runs regardless of slug — only needs contract)
+    if (wallet) {
+      const imgs = await fetchNftImageFromChain(col, wallet, d);
+      d.imageUrls = imgs;
+      saveNftStore();
+      updateNftDisplay(col.key);
+    }
+
+    // Auto-discover slug if not yet stored
+    if (!d.slug) {
+      setStatus('loading', 'FINDING…');
+      const found = await discoverSlug(col.name, chain);
+      if (found) {
+        d.slug = found;
+        saveNftStore();
+        const slugEl = document.getElementById(`nft-slug-${col.key}`);
+        if (slugEl) slugEl.value = found;
+      }
+    }
+    if (!d.slug) {
+      setStatus((d.imageUrls?.length) ? 'ok' : 'err', (d.imageUrls?.length) ? 'IMG ONLY' : 'NOT FOUND');
+      return;
+    }
+
+    // 2. Current floor
+    const floor = await fetchOsFloor(d.slug);
+    if (floor) {
+      d.prevFloor = d.floor || null;
+      d.floor     = floor;
+      saveNftStore();
+    }
+
+    // 3. User buys
+    if (wallet) {
+      const buys = await fetchAllUserBuys(wallet, d.slug, chain);
+      if (buys.length) {
+        d.userBuys = buys;
+        const first = buys[0];
+        d.buy     = first.eth;
+        d.buyUsd  = first.usd;
+        d.buyDate = new Date(first.t).toISOString();
+        saveNftStore();
+      }
+    }
+
+    updateNftDisplay(col.key);
+
+    const floorInpEl = document.getElementById(`nft-inp-${col.key}`);
+    if (floorInpEl && floor) floorInpEl.value = floor.toFixed(4);
+    const buyInpEl = document.getElementById(`nft-buy-${col.key}`);
+    if (buyInpEl && d.buy > 0) buyInpEl.value = d.buy.toFixed(4);
+
+    setStatus(floor ? 'ok' : 'err', floor ? 'OK' : 'NO DATA');
+  } catch (e) {
+    setStatus('err', 'ERR');
+    console.error(`[NFT sync ${col.key}]`, e);
+  }
+}
+
+async function syncAllNft() {
+  const btn = document.getElementById('nft-sync-btn');
+  if (btn) btn.disabled = true;
+
+  // Persist API key
+  const key = getOsKey();
+  if (key) localStorage.setItem(OS_KEY_STORE, key);
+
+  const wallet      = (document.getElementById('wallet-addr')?.value || '').trim();
+  const validWallet = /^0x[0-9a-fA-F]{40}$/.test(wallet) ? wallet : null;
+
+  // Current ETH price
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+    if (r.ok) nftEthUsd = (await r.json())?.ethereum?.usd || 0;
+  } catch {}
+
+  for (const col of NFT_COLLECTIONS) {
+    await syncNftCollection(col, validWallet);
+    await new Promise(res => setTimeout(res, 500));
+  }
+
+  if (btn) btn.disabled = false;
+}
+
+
+// ── NFT stats bar ──────────────────────────────────────
+function updateNftStats() {
+  const ethP = nftEthUsd || 1;
+  let tInv = 0, tCur = 0, active = 0, wins = 0;
+
+  for (const col of NFT_COLLECTIONS) {
+    const d = nftData(col.key);
+    if (d.floor <= 0) continue;
+
+    const curUsd = d.floor * ethP;
+
+    // Average buy price
+    const buys = d.userBuys?.length > 0 ? d.userBuys : null;
+    const count = buys ? buys.length : 1;
+    const buyUsd = buys
+      ? buys.reduce((s, b) => s + (b.usd > 0 ? b.usd : b.eth * ethP), 0) / count
+      : (d.buyUsd > 0 ? d.buyUsd : d.buy > 0 ? d.buy * ethP : 0);
+
+    if (buyUsd > 0) {
+      tInv += buyUsd;
+      tCur += curUsd;
+      active++;
+      if (curUsd > buyUsd) wins++;
+    }
+  }
+
+  const tPnl = tCur - tInv;
+  const tPct = tInv > 0 ? (tPnl / tInv) * 100 : null;
+
+  el('ns-invested').textContent   = fmt(tInv);
+  el('ns-count').textContent      = `${active} collection${active !== 1 ? 's' : ''}`;
+  el('ns-current').textContent    = fmt(tCur);
+  el('ns-current-sub').textContent = active ? `floor · ${active} tracked` : ' ';
+
+  const pnlE = el('ns-pnl');
+  pnlE.textContent = tInv > 0 ? fmt(tPnl, true) : '$0.00';
+  pnlE.className   = `stat-val ${tPnl > 0 ? 'c-green' : tPnl < 0 ? 'c-pink' : ''}`;
+
+  const retE = el('ns-ret');
+  retE.textContent = tPct !== null ? `${tPct >= 0 ? '+' : ''}${tPct.toFixed(2)}%` : '—';
+  retE.className   = `stat-val ${tPct > 0 ? 'c-green' : tPct < 0 ? 'c-pink' : ''}`;
+  el('ns-win').textContent = active ? `${wins}/${active} in profit` : '—';
+}
+
+// ── Display update ─────────────────────────────────────
+function updateNftDisplay(key) {
+  const d    = nftData(key);
+  const ethP = nftEthUsd || 1;
+
+  // Carousel
+  const carouselEl = document.getElementById(`nft-carousel-${key}`);
+  const phEl       = document.getElementById(`nft-ph-${key}`);
+  const prevBtn    = document.getElementById(`nft-prev-${key}`);
+  const nextBtn    = document.getElementById(`nft-next-${key}`);
+  const dotsEl     = document.getElementById(`nft-dots-${key}`);
+  const imgs       = d.imageUrls || [];
+  if (carouselEl && imgs.length) {
+    carouselEl.innerHTML = imgs.map(url =>
+      `<div class="nft-slide"><img src="${url}" alt="NFT"></div>`
+    ).join('');
+    carouselEl.querySelectorAll('img').forEach(img => {
+      const show = () => { img.style.opacity = '1'; };
+      if (img.complete) show(); else { img.onload = show; img.onerror = show; }
+    });
+    const multi = imgs.length > 1;
+    if (prevBtn) prevBtn.style.display = multi ? '' : 'none';
+    if (nextBtn) nextBtn.style.display = multi ? '' : 'none';
+    if (dotsEl)  dotsEl.innerHTML = multi
+      ? imgs.map((_, i) => `<span class="nft-dot${i === 0 ? ' active' : ''}"></span>`).join('')
+      : '';
+    if (phEl) phEl.style.display = 'none';
+  }
+
+  const priceEl  = document.getElementById(`nft-price-${key}`);
+  const usdEl    = document.getElementById(`nft-usd-${key}`);
+  const changeEl = document.getElementById(`nft-change-${key}`);
+  const pnlEl    = document.getElementById(`nft-pnl-${key}`);
+  if (!priceEl) return;
+
+  if (d.floor > 0) {
+    priceEl.textContent = d.floor.toFixed(4);
+    if (usdEl && nftEthUsd > 0) usdEl.textContent = `/ $${(d.floor * ethP).toFixed(0)}`;
+
+    if (d.prevFloor && changeEl) {
+      const pct = ((d.floor - d.prevFloor) / d.prevFloor) * 100;
+      changeEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+      changeEl.className   = 'nft-change ' + (pct >= 0 ? 'pos' : 'neg');
+    }
+
+    if (d.buy > 0 && pnlEl) {
+      const buys   = d.userBuys?.length > 0 ? d.userBuys : null;
+      const count  = buys ? buys.length : 1;
+      const avgUsd = buys
+        ? buys.reduce((s, b) => s + (b.usd > 0 ? b.usd : b.eth * ethP), 0) / count
+        : (d.buyUsd > 0 ? d.buyUsd : d.buy * ethP);
+      const curUsd = d.floor * ethP;
+      const diff   = curUsd - avgUsd;
+      const pct    = (diff / avgUsd) * 100;
+      const sign   = diff >= 0 ? '+' : '';
+      const label  = count > 1 ? `avg of ${count}` : (d.buyDate
+        ? new Date(d.buyDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' })
+        : 'buy');
+      pnlEl.textContent = `vs ${label}: ${sign}$${Math.abs(diff).toFixed(0)} (${sign}${pct.toFixed(1)}%)`;
+      pnlEl.className   = 'nft-pnl ' + (diff >= 0 ? 'pos' : 'neg');
+    } else if (pnlEl) {
+      pnlEl.textContent = '';
+    }
+  } else {
+    priceEl.textContent = '—';
+  }
+  updateNftStats();
+}
+
+// ── Input handlers ─────────────────────────────────────
+function onNftFloorInput(key, rawVal) {
+  const v = parseFloat(rawVal);
+  if (isNaN(v) || v <= 0) return;
+  const d = nftData(key);
+  if (d.floor === v) return;
+  d.prevFloor = d.floor || null;
+  d.floor = v;
+  saveNftStore();
+  updateNftDisplay(key);
+}
+
+
+// ── Render grid ────────────────────────────────────────
+(function renderNftGrid() {
+  const grid = document.getElementById('nft-grid');
+  if (!grid) return;
+  for (const col of NFT_COLLECTIONS) {
+    const d    = nftData(col.key);
+    const card = document.createElement('div');
+    card.className = 'nft-card';
+    card.innerHTML = `
+      <div class="nft-img-hero">
+        <div class="nft-img-placeholder" id="nft-ph-${col.key}">${col.name[0]}</div>
+        <div class="nft-carousel" id="nft-carousel-${col.key}"></div>
+        <button class="nft-arrow nft-arrow-l" id="nft-prev-${col.key}" style="display:none">&#8249;</button>
+        <button class="nft-arrow nft-arrow-r" id="nft-next-${col.key}" style="display:none">&#8250;</button>
+        <div class="nft-dots" id="nft-dots-${col.key}"></div>
+      </div>
+      <div class="nft-card-top">
+        <span class="nft-card-name">${col.name.toUpperCase()}</span>
+        ${col.chain === 'ethereum' ? '<span class="tag tag-trade" style="font-size:7px;padding:1px 5px;opacity:0.7">ETH MAINNET</span>' : ''}
+        <span class="card-wallet-status" id="nft-status-${col.key}"></span>
+      </div>
+      <div class="nft-floor-row">
+        <span class="nft-price" id="nft-price-${col.key}">—</span>
+        <span class="nft-unit">ETH</span>
+        <span class="nft-usd" id="nft-usd-${col.key}"></span>
+        <span class="nft-change" id="nft-change-${col.key}"></span>
+      </div>
+      <span class="nft-pnl" id="nft-pnl-${col.key}"></span>
+      <div class="nft-inputs">
+        <div class="nft-input-group">
+          <span class="nft-input-lbl">FLOOR</span>
+          <input type="number" class="nft-input" id="nft-inp-${col.key}"
+            placeholder="0.0000" step="0.0001" min="0">
+        </div>
+        <div class="nft-input-group">
+          <span class="nft-input-lbl">MY BUY</span>
+          <input type="number" class="nft-buy-inp" id="nft-buy-${col.key}"
+            placeholder="0.0000" step="0.0001" min="0">
+        </div>
+        <div class="nft-input-group" style="grid-column:1/-1">
+          <span class="nft-input-lbl">OS SLUG</span>
+          <input type="text" class="nft-slug-inp" id="nft-slug-${col.key}"
+            placeholder="opensea collection slug" autocomplete="off" spellcheck="false"
+            value="${d.slug || ''}">
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+
+    const floorInp = card.querySelector(`#nft-inp-${col.key}`);
+    const buyInp   = card.querySelector(`#nft-buy-${col.key}`);
+    const slugInp  = card.querySelector(`#nft-slug-${col.key}`);
+    floorInp.addEventListener('change',  function () { onNftFloorInput(col.key, this.value); });
+    floorInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') this.blur(); });
+    buyInp.addEventListener('change', function () {
+      const eth = parseFloat(this.value);
+      const d = nftData(col.key);
+      d.buy = isNaN(eth) || eth <= 0 ? 0 : eth;
+      saveNftStore();
+      updateNftDisplay(col.key);
+    });
+    buyInp.addEventListener('keydown', e => { if (e.key === 'Enter') buyInp.blur(); });
+    slugInp.addEventListener('change',  function () {
+      const d = nftData(col.key);
+      d.slug = this.value.trim() || null;
+      saveNftStore();
+    });
+    slugInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') this.blur(); });
+
+    const carouselEl = card.querySelector(`#nft-carousel-${col.key}`);
+    const prevBtn    = card.querySelector(`#nft-prev-${col.key}`);
+    const nextBtn    = card.querySelector(`#nft-next-${col.key}`);
+    const dotsEl     = card.querySelector(`#nft-dots-${col.key}`);
+    prevBtn.addEventListener('click', () => carouselEl.scrollBy({ left: -carouselEl.offsetWidth, behavior: 'smooth' }));
+    nextBtn.addEventListener('click', () => carouselEl.scrollBy({ left:  carouselEl.offsetWidth, behavior: 'smooth' }));
+    carouselEl.addEventListener('scroll', () => {
+      const idx  = Math.round(carouselEl.scrollLeft / (carouselEl.offsetWidth || 1));
+      dotsEl.querySelectorAll('.nft-dot').forEach((dot, i) => dot.classList.toggle('active', i === idx));
+    });
+
+    updateNftDisplay(col.key);
+  }
+
+  // Restore saved API key
+  const savedKey = localStorage.getItem(OS_KEY_STORE);
+  const keyInp   = document.getElementById('nft-apikey');
+  if (savedKey && keyInp) keyInp.value = savedKey;
+
+  // Initial ETH price for USD display (no full sync, just price)
+  (async () => {
+    try {
+      const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+      if (r.ok) {
+        nftEthUsd = (await r.json())?.ethereum?.usd || 0;
+        if (nftEthUsd > 0) NFT_COLLECTIONS.forEach(c => updateNftDisplay(c.key));
+      }
+    } catch {}
+  })();
+})();
+</script>
+</body>
+</html>
