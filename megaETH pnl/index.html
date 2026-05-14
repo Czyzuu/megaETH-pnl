@@ -403,6 +403,8 @@ html, body {
 .card[data-tag="farm"]  .accent-bar { background: linear-gradient(90deg, var(--peach) 0%, var(--pink) 100%); box-shadow: 0 0 18px rgba(245,175,148,0.55); }
 .card[data-tag="rwa"]     .accent-bar { background: linear-gradient(90deg, #c8aaff 0%, #a78bfa 100%); box-shadow: 0 0 18px rgba(200,170,255,0.55); }
 .card[data-tag="staking"] .accent-bar { background: linear-gradient(90deg, var(--green) 0%, var(--green-2) 100%); box-shadow: 0 0 18px rgba(144,215,159,0.55); }
+.card[data-tag="ponzi"]   { --card-glow: rgba(255,153,68,0.16); }
+.card[data-tag="ponzi"]   .accent-bar { background: linear-gradient(90deg, #FF9944 0%, #FFD166 100%); box-shadow: 0 0 18px rgba(255,153,68,0.55); }
 
 
 .card > * { position: relative; z-index: 1; }
@@ -433,6 +435,7 @@ html, body {
 .tag-farm  { border-color: rgba(245,175,148,0.35); color: var(--peach);   }
 .tag-rwa     { border-color: rgba(200,170,255,0.35); color: #c8aaff;        }
 .tag-staking { border-color: rgba(144,215,159,0.35); color: var(--green);   }
+.tag-ponzi   { border-color: rgba(255,153,68,0.35);  color: #FF9944;        }
 .tag-tba     { border-color: rgba(223,217,217,0.12); color: rgba(223,217,217,0.3); }
 
 .card-name {
@@ -920,7 +923,7 @@ input[type=number]::placeholder { color: rgba(223,217,217,0.18); }
     <span class="brand-sub">&gt;&gt; double-click name to rename</span>
   </div>
   <div class="header-right">
-    <span class="badge"><span class="dot"></span>4/22 activities</span>
+    <span class="badge"><span class="dot"></span>5/22 activities</span>
     <span class="ts" id="ts">not saved yet</span>
   </div>
 </header>
@@ -1047,7 +1050,7 @@ const DEFAULTS = [
   { id:  2, name: "Prism",              tag: "defi",  label: "DeFi"  },
   { id:  3, name: "mnstr",         tag: "rwa",   label: "RWA"   },
   { id:  4, name: "Hit.One",             tag: "defi",  label: "DeFi"  },
-  { id:  5, name: "TBA", tag: "tba", label: "TBA" },
+  { id:  5, name: "Offshore Protocol", tag: "ponzi", label: "Ponzi" },
   { id:  6, name: "TBA", tag: "tba", label: "TBA" },
   { id:  7, name: "TBA", tag: "tba", label: "TBA" },
   { id:  8, name: "TBA", tag: "tba", label: "TBA" },
@@ -1117,7 +1120,7 @@ function updateCard(id) {
   const invInp = el(`inp-inv-${id}`);
   const curInp = el(`inp-cur-${id}`);
   if (invInp && inv > 0 && invInp !== document.activeElement) invInp.value = inv;
-  if (curInp && cur > 0 && curInp !== document.activeElement) curInp.value = cur;
+  if (curInp && (inv > 0 || cur > 0) && curInp !== document.activeElement) curInp.value = cur;
 
   const hasData = inv > 0 || cur > 0;
   if (!hasData) {
@@ -1236,7 +1239,7 @@ function onNameEdit(id, nameEl) {
 function renderCard(a) {
   const { inv, cur } = pnlOf(a.id);
   const div = document.createElement('div');
-  div.className = a.id >= 5 ? 'card card-inactive' : 'card';
+  div.className = a.tag === 'tba' ? 'card card-inactive' : 'card';
   div.dataset.tag = a.tag;
   div.dataset.id  = a.id;
   div.innerHTML = `
@@ -1273,6 +1276,14 @@ function renderCard(a) {
         >
       <span class="card-wallet-status" id="hitone-status"></span>
     </div>` : ''}
+    ${a.id === 5 ? `
+    <div class="card-wallet">
+      <input type="text" class="card-wallet-input" id="offshore-addr"
+        placeholder="0x… offshore wallet" autocomplete="off" spellcheck="false"
+        value="${store[5]?._wallet || ''}"
+        >
+      <span class="card-wallet-status" id="offshore-status"></span>
+    </div>` : ''}
     <div class="fields">
       <div>
         <div class="field-lbl">Invested ($)</div>
@@ -1306,7 +1317,7 @@ function applyView() {
   else if (activeSort === 'pct-desc') acts.sort((a,b) => (pnlOf(b.id).pct ?? -Infinity) - (pnlOf(a.id).pct ?? -Infinity));
   else if (activeSort === 'invested-desc') acts.sort((a,b) => pnlOf(b.id).inv - pnlOf(a.id).inv);
 
-  acts.filter(a => a.id < 5).forEach(a => {
+  acts.filter(a => a.tag !== 'tba').forEach(a => {
     const c = grid.querySelector(`[data-id="${a.id}"]`);
     if (c) grid.appendChild(c);
   });
@@ -1325,7 +1336,7 @@ function applyView() {
 /* ── INIT ──────────────────────────────────────────────── */
 const grid    = el('grid');
 const tbaRow  = el('tba-row');
-DEFAULTS.forEach(a => (a.id >= 5 ? tbaRow : grid).appendChild(renderCard(a)));
+DEFAULTS.forEach(a => (a.tag === 'tba' ? tbaRow : grid).appendChild(renderCard(a)));
 DEFAULTS.forEach(a => updateCard(a.id));
 updateBars();
 updateStats();
@@ -1379,6 +1390,8 @@ el('wallet-addr').addEventListener('input', function () {
 });
 
 async function fetchWallet(addr) {
+  store._mainWallet = addr;
+  save();
   try {
     const infoRes = await fetch(`${SCAN}/addresses/${addr}`);
     if (!infoRes.ok) throw new Error(infoRes.status);
@@ -1389,12 +1402,30 @@ async function fetchWallet(addr) {
     setWalletHint(`>> ${short} · ${info.transaction_count ?? 0} txs · ${ethBal.toFixed(4)} ETH`);
     loadFluxCard(addr);
     loadPrismCard(addr);
+    const _reloadCards = [
+      { id: 3, fn: loadMnstrCard },
+      { id: 4, fn: loadHitOneCard },
+      { id: 5, fn: loadOffshoreCard },
+    ];
+    for (const { id, fn } of _reloadCards) {
+      const saved = store[id]?._wallet;
+      if (saved && /^0x[0-9a-fA-F]{40}$/.test(saved)) fn(saved);
+    }
   } catch (e) {
     setWalletStatus('err', 'ERROR');
     setWalletHint(`>> ${e.message || e}`);
     console.error('[fetchWallet]', e);
   }
 }
+
+// Restore main wallet so card auto-loaders can read it via el('wallet-addr').value
+(function () {
+  const saved = store._mainWallet;
+  if (saved && /^0x[0-9a-fA-F]{40}$/.test(saved)) {
+    el('wallet-addr').value = saved;
+    setWalletStatus('ok', 'CONNECTED');
+  }
+})();
 
 /* ── ABI helpers ─────────────────────────────────────── */
 function pad32(n)     { return BigInt(n).toString(16).padStart(64, '0'); }
@@ -1682,6 +1713,100 @@ async function loadPrismCard(wallet) {
   }
 }
 
+/* ── Invested from main wallet helper ───────────────── */
+async function calcInvestedFromMain(cardAddr, ethPrice, { subtractOutflows = false, allOutflows = false, skipEth = false, tokenContract = null } = {}) {
+  const mainWallet = el('wallet-addr')?.value.trim() || '';
+  if (!mainWallet || !/^0x[0-9a-fA-F]{40}$/.test(mainWallet)) return { inflows: 0, outflows: 0, ethUsd: ethPrice || 0 };
+
+  let curEthUsd = ethPrice;
+  if (!curEthUsd) {
+    try {
+      const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+      if (r.ok) curEthUsd = (await r.json())?.ethereum?.usd || 0;
+    } catch {}
+  }
+
+  const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+  const cardAddrLwr   = cardAddr.toLowerCase();
+  const mainWalletLwr = mainWallet.toLowerCase();
+  const paddedMain    = '0x' + mainWalletLwr.replace('0x','').padStart(64,'0');
+  const paddedCard    = '0x' + cardAddrLwr.replace('0x','').padStart(64,'0');
+
+  // ERC-20 transfers in both directions (parallel)
+  const logFilter = f => ({ fromBlock: PRISM_FROM_BLOCK, toBlock: 'latest', ...(tokenContract ? { address: tokenContract } : {}), ...f });
+  const [erc20In, erc20Out] = await Promise.all([
+    ethLogs(logFilter({ topics: [TRANSFER_TOPIC, paddedMain, paddedCard] })).catch(() => []),
+    (subtractOutflows || allOutflows)
+      ? ethLogs(logFilter({ topics: allOutflows
+          ? [TRANSFER_TOPIC, paddedCard]
+          : [TRANSFER_TOPIC, paddedCard, paddedMain] })).catch(() => [])
+      : Promise.resolve([]),
+  ]);
+
+  // Fetch token metadata for all unique contracts across both directions
+  const allTokenAddrs = [...new Set([...erc20In, ...erc20Out]
+    .map(l => (l.address || '').toLowerCase()).filter(Boolean))];
+  const tokenMeta = {};
+  await Promise.all(allTokenAddrs.map(async ta => {
+    try {
+      const r = await fetch(`${SCAN}/tokens/${ta}`);
+      if (r.ok) {
+        const d = await r.json();
+        tokenMeta[ta] = { dec: parseInt(d.decimals ?? 18), usd: parseFloat(d.exchange_rate ?? 0) };
+      }
+    } catch {}
+    if (!tokenMeta[ta]) tokenMeta[ta] = { dec: 18, usd: 0 };
+  }));
+
+  const sumErc20 = logs => logs.reduce((sum, log) => {
+    const ta   = (log.address || '').toLowerCase();
+    const meta = tokenMeta[ta] ?? { dec: 18, usd: 0 };
+    const raw  = BigInt('0x' + (log.data || '0x').replace('0x','').padStart(64,'0'));
+    return sum + (Number(raw) / 10**meta.dec) * meta.usd;
+  }, 0);
+
+  // Native ETH: skip entirely when caller doesn't need it
+  let ethInUsd = 0, ethOutUsd = 0;
+  if (!skipEth) {
+    const ethIn = [], ethOut = [];
+    const needDates = new Set();
+    let pageUrl = `${SCAN}/addresses/${cardAddr}/transactions`;
+    let pages   = 0;
+    while (pageUrl && pages < 10) {
+      const txRes = await fetch(pageUrl);
+      if (!txRes.ok) break;
+      const txData = await txRes.json();
+      for (const tx of (txData.items || [])) {
+        const from   = tx.from?.hash?.toLowerCase();
+        const to     = tx.to?.hash?.toLowerCase();
+        const ethAmt = parseFloat(tx.value || 0) / 1e18;
+        if (ethAmt <= 0) continue;
+        const dateStr = tx.timestamp ? new Date(tx.timestamp).toISOString().slice(0, 10) : null;
+        if (from === mainWalletLwr && to === cardAddrLwr) {
+          ethIn.push({ ethAmt, dateStr });
+          if (dateStr) needDates.add(dateStr);
+        } else if (subtractOutflows && from === cardAddrLwr && to === mainWalletLwr) {
+          ethOut.push({ ethAmt, dateStr });
+          if (dateStr) needDates.add(dateStr);
+        }
+      }
+      const np = txData.next_page_params;
+      pageUrl  = np ? `${SCAN}/addresses/${cardAddr}/transactions?${new URLSearchParams(np)}` : null;
+      pages++;
+    }
+    await Promise.all([...needDates].map(d => ethPriceOnDate(d)));
+    const ethUsdOf = ({ ethAmt, dateStr }) =>
+      ethAmt * ((dateStr && _ethPriceCache[dateStr]) ? _ethPriceCache[dateStr] : curEthUsd);
+    ethInUsd  = ethIn.reduce((s, tx) => s + ethUsdOf(tx), 0);
+    ethOutUsd = ethOut.reduce((s, tx) => s + ethUsdOf(tx), 0);
+  }
+
+  const inflows  = sumErc20(erc20In)  + ethInUsd;
+  const outflows = sumErc20(erc20Out) + ethOutUsd;
+
+  return { inflows, outflows, ethUsd: curEthUsd };
+}
+
 /* ── mnstr card ─────────────────────────────────────── */
 let mnstrTimer = null;
 
@@ -1718,73 +1843,27 @@ async function loadMnstrCard(addr) {
     ]);
     if (!infoRes.ok) throw new Error(infoRes.status);
 
-    const info      = await infoRes.json();
-    const ethPrice  = parseFloat(info.exchange_rate || 0);
-    const ethBal    = parseFloat(info.coin_balance  || 0) / 1e18;
-    let   currentUsd = ethBal * ethPrice;
+    const info    = await infoRes.json();
+    const ethBal  = parseFloat(info.coin_balance || 0) / 1e18;
 
     const tokens    = tokensRaw.ok ? await tokensRaw.json() : [];
     const tokenList = Array.isArray(tokens) ? tokens : (tokens.items || []);
-
-    const tokPriceMap = {};
+    let tokenBalUsd = 0;
     for (const t of tokenList) {
       const dec   = parseInt(t.token?.decimals   ?? 18);
       const price = parseFloat(t.token?.exchange_rate ?? 0);
-      currentUsd += (parseFloat(t.value || 0) / Math.pow(10, dec)) * price;
-      const ta = (t.token?.address_hash || '').toLowerCase();
-      if (ta) tokPriceMap[ta] = { dec, usd: price };
+      tokenBalUsd += (parseFloat(t.value || 0) / Math.pow(10, dec)) * price;
     }
 
-    // ── Funded amount ─────────────────────────────────────
-    // Single eth_getLogs call from Prism deploy block to latest.
-    // topics[1]=null means "any from", topics[2]=wallet means "to wallet".
-    // The RPC may return both directions, so verify toAddr client-side.
-    const TRANSFER_TOPIC  = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-    const EXCLUDED_SENDER = '0x61fccfc0279b09c387608efff56fd9187e61d2874';
-    const walletLower     = addr.toLowerCase();
-    const paddedWallet    = '0x' + walletLower.replace('0x','').padStart(64,'0');
+    // ── Invested: net flows main ↔ mnstr ─────────────────
+    const { inflows: mnstrIn, outflows: mnstrOut, ethUsd } =
+      await calcInvestedFromMain(addr, parseFloat(info.exchange_rate || 0), { subtractOutflows: true });
 
-    const transferLogs = await ethLogs({
-      fromBlock: PRISM_FROM_BLOCK,
-      toBlock:   'latest',
-      topics:    [TRANSFER_TOPIC, null, paddedWallet],
-    }).catch(() => []);
-
-    let fundedUsd = 0;
-    for (const log of transferLogs) {
-      const toAddr = ('0x' + (log.topics?.[2] || '').slice(-40)).toLowerCase();
-      if (toAddr !== walletLower) continue;                 // must be inflow
-
-      const fromAddr = ('0x' + (log.topics?.[1] || '').slice(-40)).toLowerCase();
-      if (fromAddr === EXCLUDED_SENDER) continue;           // skip excluded sender
-
-      const ta   = (log.address || '').toLowerCase();
-      const meta = tokPriceMap[ta] ?? { dec: 18, usd: 0 };
-      const raw  = BigInt('0x' + (log.data || '0x').replace('0x','').padStart(64,'0'));
-      fundedUsd += (Number(raw) / 10**meta.dec) * meta.usd;
-    }
-
-    // Native ETH inflows (transaction list, Blockscout indexes these when available)
-    let fundedEth = 0;
-    let pageUrl   = `${SCAN}/addresses/${addr}/transactions?limit=50`;
-    let pages     = 0;
-    while (pageUrl && pages < 10) {
-      const txRes = await fetch(pageUrl);
-      if (!txRes.ok) break;
-      const txData = await txRes.json();
-      for (const tx of (txData.items || [])) {
-        if (tx.to?.hash?.toLowerCase() === walletLower)
-          fundedEth += parseFloat(tx.value || 0) / 1e18;
-      }
-      const np = txData.next_page_params;
-      pageUrl  = np ? `${SCAN}/addresses/${addr}/transactions?limit=50&${new URLSearchParams(np)}` : null;
-      pages++;
-    }
-    fundedUsd += fundedEth * ethPrice;
+    const currentUsd = ethBal * ethUsd + tokenBalUsd;
 
     if (!store[3]) store[3] = {};
-    store[3].current  = parseFloat(currentUsd.toFixed(2));
-    if (fundedUsd > 0) store[3].invested = parseFloat(fundedUsd.toFixed(2));
+    store[3].current  = parseFloat((currentUsd + mnstrOut).toFixed(2));
+    if (mnstrIn > 0) store[3].invested = parseFloat(mnstrIn.toFixed(2));
     save();
     updateCard(3);
     updateBars();
@@ -1810,6 +1889,89 @@ async function loadMnstrCard(addr) {
   const saved = store[3]?._wallet;
   if (saved && /^0x[0-9a-fA-F]{40}$/.test(saved)) {
     loadMnstrCard(saved);
+  }
+})();
+
+/* ── Offshore Protocol card ──────────────────────────── */
+let offshoreTimer = null;
+
+function onOffshoreAddr(val) {
+  clearTimeout(offshoreTimer);
+  const addr = val.trim();
+  const statusEl = el('offshore-status');
+  if (!statusEl) return;
+
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+    statusEl.dataset.state = '';
+    statusEl.textContent   = '';
+    return;
+  }
+
+  statusEl.dataset.state = 'loading';
+  statusEl.textContent   = 'LOADING…';
+
+  if (!store[5]) store[5] = {};
+  store[5]._wallet = addr;
+  save();
+
+  offshoreTimer = setTimeout(() => loadOffshoreCard(addr), 700);
+}
+
+async function loadOffshoreCard(addr) {
+  const statusEl = el('offshore-status');
+  try {
+    // ── Current value ────────────────────────────────────
+    const [infoRes, tokensRaw] = await Promise.all([
+      fetch(`${SCAN}/addresses/${addr}`),
+      fetch(`${SCAN}/addresses/${addr}/token-balances`),
+    ]);
+    if (!infoRes.ok) throw new Error(infoRes.status);
+
+    const info    = await infoRes.json();
+    const ethBal  = parseFloat(info.coin_balance || 0) / 1e18;
+
+    const tokens    = tokensRaw.ok ? await tokensRaw.json() : [];
+    const tokenList = Array.isArray(tokens) ? tokens : (tokens.items || []);
+    let tokenBalUsd = 0;
+    for (const t of tokenList) {
+      const dec   = parseInt(t.token?.decimals   ?? 18);
+      const price = parseFloat(t.token?.exchange_rate ?? 0);
+      tokenBalUsd += (parseFloat(t.value || 0) / Math.pow(10, dec)) * price;
+    }
+
+    // ── Invested: outflows from main wallet → offshore ───
+    const { inflows: offshoreIn, ethUsd } =
+      await calcInvestedFromMain(addr, parseFloat(info.exchange_rate || 0));
+
+    const currentUsd = ethBal * ethUsd + tokenBalUsd;
+
+    if (!store[5]) store[5] = {};
+    store[5].current  = parseFloat(currentUsd.toFixed(2));
+    if (offshoreIn > 0) store[5].invested = parseFloat(offshoreIn.toFixed(2));
+
+    save();
+    updateCard(5);
+    updateBars();
+    updateStats();
+
+    if (statusEl) { statusEl.dataset.state = 'ok'; statusEl.textContent = 'OK'; }
+  } catch (e) {
+    if (statusEl) { statusEl.dataset.state = 'err'; statusEl.textContent = 'ERR'; }
+    console.error('[loadOffshoreCard]', e);
+  }
+}
+
+(function () {
+  const input = el('offshore-addr');
+  if (input) {
+    const handler = function () { onOffshoreAddr(this.value); };
+    input.addEventListener('input',  handler);
+    input.addEventListener('change', handler);
+  }
+
+  const saved = store[5]?._wallet;
+  if (saved && /^0x[0-9a-fA-F]{40}$/.test(saved)) {
+    loadOffshoreCard(saved);
   }
 })();
 
@@ -1841,70 +2003,29 @@ function onHitOneAddr(val) {
 async function loadHitOneCard(addr) {
   const statusEl = el('hitone-status');
   try {
-    const [infoRes, tokensRaw] = await Promise.all([
-      fetch(`${SCAN}/addresses/${addr}`),
-      fetch(`${SCAN}/addresses/${addr}/token-balances`),
-    ]);
-    if (!infoRes.ok) throw new Error(infoRes.status);
+    const USDM         = '0xFAfDdbb3FC7688494971a79cc65DCa3EF82079E7';
+    const USDM_LWR     = USDM.toLowerCase();
 
-    const info      = await infoRes.json();
-    const ethPrice  = parseFloat(info.exchange_rate || 0);
-    const ethBal    = parseFloat(info.coin_balance  || 0) / 1e18;
-    let   currentUsd = ethBal * ethPrice;
-
-    const tokens    = tokensRaw.ok ? await tokensRaw.json() : [];
-    const tokenList = Array.isArray(tokens) ? tokens : (tokens.items || []);
-
-    const tokPriceMap = {};
+    // Live USDM balance of the card wallet (ignores 0xdf248 entirely)
+    const tokensRaw  = await fetch(`${SCAN}/addresses/${addr}/token-balances`);
+    const tokens     = tokensRaw.ok ? await tokensRaw.json() : [];
+    const tokenList  = Array.isArray(tokens) ? tokens : (tokens.items || []);
+    let usdmBalUsd   = 0;
     for (const t of tokenList) {
-      const dec   = parseInt(t.token?.decimals   ?? 18);
-      const price = parseFloat(t.token?.exchange_rate ?? 0);
-      currentUsd += (parseFloat(t.value || 0) / Math.pow(10, dec)) * price;
-      const ta = (t.token?.address_hash || '').toLowerCase();
-      if (ta) tokPriceMap[ta] = { dec, usd: price };
+      if ((t.token?.address || '').toLowerCase() !== USDM_LWR) continue;
+      const dec   = parseInt(t.token?.decimals ?? 18);
+      const price = parseFloat(t.token?.exchange_rate ?? 1);
+      usdmBalUsd  = (parseFloat(t.value || 0) / Math.pow(10, dec)) * (price || 1);
+      break;
     }
 
-    const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-    const walletLower    = addr.toLowerCase();
-    const paddedWallet   = '0x' + walletLower.replace('0x','').padStart(64,'0');
-
-    const transferLogs = await ethLogs({
-      fromBlock: PRISM_FROM_BLOCK,
-      toBlock:   'latest',
-      topics:    [TRANSFER_TOPIC, null, paddedWallet],
-    }).catch(() => []);
-
-    let fundedUsd = 0;
-    for (const log of transferLogs) {
-      const toAddr = ('0x' + (log.topics?.[2] || '').slice(-40)).toLowerCase();
-      if (toAddr !== walletLower) continue;
-
-      const ta   = (log.address || '').toLowerCase();
-      const meta = tokPriceMap[ta] ?? { dec: 18, usd: 0 };
-      const raw  = BigInt('0x' + (log.data || '0x').replace('0x','').padStart(64,'0'));
-      fundedUsd += (Number(raw) / 10**meta.dec) * meta.usd;
-    }
-
-    let fundedEth = 0;
-    let pageUrl   = `${SCAN}/addresses/${addr}/transactions?limit=50`;
-    let pages     = 0;
-    while (pageUrl && pages < 10) {
-      const txRes = await fetch(pageUrl);
-      if (!txRes.ok) break;
-      const txData = await txRes.json();
-      for (const tx of (txData.items || [])) {
-        if (tx.to?.hash?.toLowerCase() === walletLower)
-          fundedEth += parseFloat(tx.value || 0) / 1e18;
-      }
-      const np = txData.next_page_params;
-      pageUrl  = np ? `${SCAN}/addresses/${addr}/transactions?limit=50&${new URLSearchParams(np)}` : null;
-      pages++;
-    }
-    fundedUsd += fundedEth * ethPrice;
+    // USDM invested = inflows from main wallet only
+    const { inflows: hitoneIn } =
+      await calcInvestedFromMain(addr, 0, { skipEth: true, tokenContract: USDM });
 
     if (!store[4]) store[4] = {};
-    store[4].current  = parseFloat(currentUsd.toFixed(2));
-    if (fundedUsd > 0) store[4].invested = parseFloat(fundedUsd.toFixed(2));
+    store[4].current  = parseFloat(usdmBalUsd.toFixed(2));
+    if (hitoneIn > 0) store[4].invested = parseFloat(hitoneIn.toFixed(2));
     save();
     updateCard(4);
     updateBars();
